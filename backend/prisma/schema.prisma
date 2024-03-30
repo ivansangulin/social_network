@@ -1,0 +1,19 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                   Int     @id @default(autoincrement())
+  username             String  @unique @db.VarChar()
+  email                String  @unique @db.VarChar()
+  password             String  @db.VarChar()
+  profile_picture_uuid String?  @db.VarChar()
+  locked_profile       Boolean @db.Boolean()
+
+  @@map("users")
+}

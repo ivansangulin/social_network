@@ -28,3 +28,22 @@ export const checkIfUsernameExists = async (username: string) => {
   const user = await prisma.user.findFirst({ where: { username: username } });
   return user ? true : false;
 };
+
+export const checkPassword = async (auth: string, password: string) => {
+  try {
+    const obj = await prisma.user.findFirstOrThrow({
+      where: { OR: [{ username: auth }, { email: auth }] },
+      select: { password: true },
+    });
+    return bcrypt.compareSync(password, obj.password);
+  } catch (err) {
+    return false;
+  }
+};
+
+export const findUserByUsernameOrEmail = async (auth: string) => {
+  const user = await prisma.user.findFirstOrThrow({
+    where: { OR: [{ username: auth }, { email: auth }] },
+  });
+  return user;
+};

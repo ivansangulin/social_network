@@ -8,6 +8,11 @@ import {
   checkIfUsernameExists,
   checkPassword,
 } from "../services/UserService";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
+const env = process.env;
 
 export const validateUserRegistrationData = async (
   req: Request,
@@ -59,5 +64,33 @@ export const validateUserLoginData = async (
     }
   } else {
     return res.status(400).send("Bad user data");
+  }
+};
+
+export const RequiresAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const cookie: string | undefined = req.signedCookies.session;
+    if (!cookie) {
+      return res.sendStatus(401);
+    }
+    const secret: string | undefined = env.SECRET_ACCESS_TOKEN;
+    if (!secret) {
+      throw new Error();
+    }
+    jwt.verify(cookie, secret, async (err, decoded) => {
+      if (err) {
+        return res.status(401).send("Session expired");
+      }
+      const token = decoded as JwtPayload;
+      const { id } = token;
+      req.userId = id;
+    });
+    next();
+  } catch (err) {
+    return res.status(500).send("Error occured verifying session");
   }
 };

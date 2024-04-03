@@ -1,11 +1,13 @@
-import { Request, Response, Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import z from "zod";
 import {
+  findMyself,
   findUserByUsernameOrEmail,
   registerUser,
 } from "../services/UserService";
 import { check } from "express-validator";
 import {
+  RequiresAuth,
   validateUserLoginData,
   validateUserRegistrationData,
 } from "../middleware/auth";
@@ -83,9 +85,26 @@ userRouter.post(
         expiresIn: "200m",
       });
       res.cookie("session", token, cookieOptions);
-      res.status(200).send("Successfully logged in");
+      return res.status(200).send("Successfully logged in");
     } catch (err) {
       return res.status(500).send("Error occured logging in");
+    }
+  }
+);
+
+userRouter.get(
+  "/me",
+  RequiresAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.userId;
+    if (!userId) {
+      return res.sendStatus(401);
+    }
+    try {
+      const user = await findMyself(Number(userId));
+      return res.status(200).json(user);
+    } catch (err) {
+      return res.status(500).send("Error occured fetching data!");
     }
   }
 );

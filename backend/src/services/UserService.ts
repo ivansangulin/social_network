@@ -47,3 +47,11 @@ export const findUserByUsernameOrEmail = async (auth: string) => {
   });
   return user;
 };
+
+export const findMyself = async (id: number) => {
+  const user = await prisma.user.findFirstOrThrow({
+    where: { id: id },
+    select: { email: true, username: true },
+  });
+  return user;
+};

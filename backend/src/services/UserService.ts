@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { UserRegistrationType } from "../controllers/AuthController";
 import bcrypt from "bcrypt";
+import { randomUUID } from "crypto";
 
 const saltRounds = 5;
 const prisma = new PrismaClient();
@@ -14,6 +15,7 @@ export const registerUser = async (userDto: UserRegistrationType) => {
       email: userDto.email,
       password: userDto.password,
       locked_profile: true,
+      uuid: randomUUID(),
     },
   });
   return user;

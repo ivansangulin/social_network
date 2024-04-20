@@ -12,8 +12,9 @@ model User {
   username             String  @unique @db.VarChar()
   email                String  @unique @db.VarChar()
   password             String  @db.VarChar()
-  profile_picture_uuid String?  @db.VarChar()
+  profile_picture_uuid String? @db.VarChar()
   locked_profile       Boolean @db.Boolean()
+  uuid                 String  @unique @db.VarChar()
 
   @@map("users")
 }

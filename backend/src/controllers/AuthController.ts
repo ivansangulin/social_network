@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response, Router } from "express";
+import { Request, Response, Router } from "express";
 import z from "zod";
 import {
   findMyself,
@@ -80,21 +80,17 @@ userRouter.post(
   }
 );
 
-userRouter.get(
-  "/me",
-  RequiresAuth,
-  async (req: Request, res: Response, next: NextFunction) => {
-    const userId = req.userId;
-    if (!userId) {
-      return res.sendStatus(401);
-    }
-    try {
-      const user = await findMyself(Number(userId));
-      return res.status(200).json(user);
-    } catch (err) {
-      return res.status(500).send("Error occured fetching data!");
-    }
+userRouter.get("/me", RequiresAuth, async (req: Request, res: Response) => {
+  const userId = req.userId;
+  if (!userId) {
+    return res.sendStatus(401);
   }
-);
+  try {
+    const user = await findMyself(Number(userId));
+    return res.status(200).json(user);
+  } catch (err) {
+    return res.status(500).send("Error occured fetching data!");
+  }
+});
 
 export default userRouter;

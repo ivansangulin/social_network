@@ -8,13 +8,24 @@ generator client {
 }
 
 model User {
-  id                   Int     @id @default(autoincrement())
-  username             String  @unique @db.VarChar()
-  email                String  @unique @db.VarChar()
-  password             String  @db.VarChar()
-  profile_picture_uuid String? @db.VarChar()
-  locked_profile       Boolean @db.Boolean()
-  uuid                 String  @unique @db.VarChar()
+  id                   Int          @id @default(autoincrement())
+  username             String       @unique @db.VarChar()
+  email                String       @unique @db.VarChar()
+  password             String       @db.VarChar()
+  profile_picture_uuid String?      @db.VarChar()
+  locked_profile       Boolean      @db.Boolean()
+  uuid                 String       @unique @db.VarChar()
+  Friendship           Friendship[]
 
   @@map("users")
+}
+
+model Friendship {
+  id        Int  @default(autoincrement())
+  user_id   Int  @db.Integer()
+  friend_id Int  @db.Integer()
+  friend    User @relation(fields: [friend_id], references: [id])
+
+  @@id(name: "friendship_id", [user_id, friend_id])
+  @@map("friendships")
 }

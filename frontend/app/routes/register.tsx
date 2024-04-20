@@ -2,7 +2,6 @@ import {
   ActionFunctionArgs,
   json,
   LoaderFunctionArgs,
-  MetaFunction,
   redirect,
 } from "@remix-run/node";
 import { Link, useFetcher } from "@remix-run/react";
@@ -10,30 +9,35 @@ import { useEffect, useState } from "react";
 import { zfd } from "zod-form-data";
 import { getCookie } from "~/util/user";
 
-const loginSchema = zfd.formData({
+const registrationSchema = zfd.formData({
   username: zfd.text(),
+  email: zfd.text(),
   password: zfd.text(),
+  repeatedPassword: zfd.text(),
 });
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
-  const loginData = await loginSchema.safeParse(formData);
-  if (loginData.success) {
-    const loginResponse = await fetch(`${process.env.BACKEND_URL}/user/login`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-      body: JSON.stringify(loginData.data),
-    });
-    if (!loginResponse.ok) {
-      return json(await loginResponse.text());
+  const registrationData = await registrationSchema.safeParse(formData);
+  if (registrationData.success) {
+    const registrationResponse = await fetch(
+      `${process.env.BACKEND_URL}/user/register`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify(registrationData.data),
+      }
+    );
+    if (!registrationResponse.ok) {
+      return json(await registrationResponse.text());
     }
-    const cookie = loginResponse.headers.get("set-cookie");
+    const cookie = registrationResponse.headers.get("set-cookie");
     if (cookie) {
       return redirect("/", { headers: { "Set-Cookie": cookie } });
     }
-    return json("Failed to login!");
+    return json("Failed to register!");
   }
   return json("Data can't be empty!");
 };
@@ -50,14 +54,13 @@ export const loader = ({ request }: LoaderFunctionArgs) => {
   return null;
 };
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Login" }, { name: "Login", content: "Login" }];
-};
-
 export default () => {
   const fetcher = useFetcher();
   const actionMessage = fetcher.data as string | null;
   const [disabled, setDisabled] = useState<boolean>(true);
+  const [password, setPassword] = useState<string>();
+  const [repeatedPassword, setRepeatedPassword] = useState<string>();
+  const passwordsEqual = password === repeatedPassword;
 
   useEffect(() => {
     if (fetcher.state === "submitting") {
@@ -77,10 +80,20 @@ export default () => {
           }
         }}
       >
-        <div className="text-4xl text-center mb-10">Log in</div>
+        <div className="text-4xl text-center mb-10">Registration</div>
+
+        <label htmlFor="email" className="text-xl">
+          E-mail:
+        </label>
+        <input
+          className="rounded-lg min-w-96 min-h-12 px-4 border border-slate-300"
+          type="email"
+          name="email"
+          required
+        />
 
         <label htmlFor="username" className="text-xl">
-          Username / E-mail:
+          Username:
         </label>
         <input
           className="rounded-lg min-w-96 min-h-12 px-4 border border-slate-300"
@@ -97,16 +110,42 @@ export default () => {
           type="password"
           name="password"
           required
+          onChange={(e) => {
+            e.preventDefault();
+            setPassword(e.currentTarget.value);
+          }}
         />
+
+        <label htmlFor="repeatedPassword" className="text-xl">
+          Repeated password:
+        </label>
+        <input
+          className="rounded-lg min-w-96 min-h-12 px-4 border border-slate-300"
+          type="password"
+          name="repeatedPassword"
+          required
+          onChange={(e) => {
+            e.preventDefault();
+            setRepeatedPassword(e.currentTarget.value);
+          }}
+        />
+
+        <div
+          className={`text-red-500 invisible ${!passwordsEqual && "!visible"}`}
+        >
+          Passwords are not equal!
+        </div>
 
         <button
           type="submit"
-          className={`!mt-8 p-2 text-white text-xl bg-primary ${
-            disabled ? "cursor-not-allowed" : "hover:bg-primary-dark"
+          className={`!mt-4 p-2 text-white text-xl bg-primary ${
+            disabled || !passwordsEqual
+              ? "cursor-not-allowed"
+              : "hover:bg-primary-dark"
           }`}
-          disabled={disabled}
+          disabled={disabled || !passwordsEqual}
         >
-          Log in
+          Register
         </button>
 
         <div
@@ -118,10 +157,10 @@ export default () => {
         </div>
 
         <Link
-          to={"/register"}
+          to={"/login"}
           className="!mt-8 text-blue-500 text-lg hover:underline"
         >
-          {"Don't have an account?"}
+          {"Already have an account?"}
         </Link>
       </fetcher.Form>
     </div>

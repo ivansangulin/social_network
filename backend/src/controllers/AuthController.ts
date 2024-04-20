@@ -12,11 +12,7 @@ import {
   validateUserRegistrationData,
 } from "../middleware/auth";
 import Validate from "../middleware/validate";
-import dotenv from "dotenv";
-import jwt from "jsonwebtoken";
-
-dotenv.config();
-const env = process.env;
+import { getToken, Token } from "../utils/token";
 
 const userRouter = Router();
 
@@ -52,8 +48,10 @@ userRouter.post(
   async (req: Request, res: Response) => {
     const userDto = req.body;
     try {
-      await registerUser(userDto);
-      return res.sendStatus(200);
+      const user = await registerUser(userDto);
+      const tokenObj: Token = getToken(user);
+      res.cookie("session", tokenObj.token, tokenObj.cookieOptions);
+      return res.status(200).send("Successfully registered!");
     } catch (err) {
       return res.status(400).send("Couldn't create user!");
     }
@@ -73,18 +71,8 @@ userRouter.post(
       const user = await findUserByUsernameOrEmail(
         loginData.email ?? loginData.username!
       );
-      const tokenObj = {
-        id: user.id,
-      };
-      const cookieOptions = {
-        maxAge: 20 * 60 * 10000,
-        httpOnly: true,
-        signed: true,
-      };
-      const token = jwt.sign(tokenObj, env.SECRET_ACCESS_TOKEN!, {
-        expiresIn: "200m",
-      });
-      res.cookie("session", token, cookieOptions);
+      const tokenObj: Token = getToken(user);
+      res.cookie("session", tokenObj.token, tokenObj.cookieOptions);
       return res.status(200).send("Successfully logged in");
     } catch (err) {
       return res.status(500).send("Error occured logging in");

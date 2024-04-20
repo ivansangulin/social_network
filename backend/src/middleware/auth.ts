@@ -57,7 +57,7 @@ export const validateUserLoginData = async (
       ) {
         next();
       } else {
-        return res.send(401).send("Wrong login data");
+        return res.status(401).send("Wrong login data");
       }
     } else {
       return res.status(400).send("Wrong login data");

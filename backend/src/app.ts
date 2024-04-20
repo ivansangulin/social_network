@@ -1,7 +1,8 @@
-import express, { json } from "express";
+import express from "express";
 import dotenv from "dotenv";
 import userRouter from "./controllers/AuthController";
 import cookieParser from "cookie-parser";
+import { json } from "body-parser";
 
 dotenv.config();
 const env = process.env;
@@ -14,7 +15,7 @@ app.use(cookieParser(env.SECRET_ACCESS_TOKEN));
 declare global {
   namespace Express {
     interface Request {
-      userId?: string
+      userId?: string;
     }
   }
 }

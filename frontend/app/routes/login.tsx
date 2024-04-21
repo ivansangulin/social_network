@@ -2,7 +2,6 @@ import {
   ActionFunctionArgs,
   json,
   LoaderFunctionArgs,
-  MetaFunction,
   redirect,
 } from "@remix-run/node";
 import { Link, useFetcher } from "@remix-run/react";
@@ -48,10 +47,6 @@ export const loader = ({ request }: LoaderFunctionArgs) => {
     });
   }
   return null;
-};
-
-export const meta: MetaFunction = () => {
-  return [{ title: "Login" }, { name: "Login", content: "Login" }];
 };
 
 export default () => {

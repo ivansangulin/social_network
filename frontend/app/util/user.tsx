@@ -3,7 +3,10 @@ import { z } from "zod";
 const userDataSchema = z.object({
   username: z.string(),
   email: z.string(),
+  profile_picture_uuid: z.string().nullish(),
 });
+
+export type User = z.infer<typeof userDataSchema>;
 
 export const me = async (request: Request) => {
   const cookie = getCookie(request);

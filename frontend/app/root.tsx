@@ -1,17 +1,46 @@
-import { LinksFunction } from "@remix-run/node";
+import {
+  json,
+  LinksFunction,
+  LoaderFunctionArgs,
+} from "@remix-run/node";
 import {
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  ShouldRevalidateFunction,
 } from "@remix-run/react";
 import stylesheet from "./tailwind.css?url";
 import { Navbar } from "./components/navbar";
+import { me } from "./util/user";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
 ];
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const user = await me(request);
+  return json(user);
+};
+
+export type rootLoader = typeof loader;
+
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  defaultShouldRevalidate,
+  currentUrl,
+  nextUrl,
+}) => {
+  if (
+    currentUrl.pathname.includes("/login") ||
+    currentUrl.pathname.includes("/register") ||
+    nextUrl.pathname.includes("/login") ||
+    nextUrl.pathname.includes("/register")
+  ) {
+    return true;
+  }
+  return defaultShouldRevalidate;
+};
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (

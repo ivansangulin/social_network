@@ -13,6 +13,7 @@ const port = env.PORT ?? 4200;
 const app = express();
 app.use(json());
 app.use(cookieParser(env.SECRET_ACCESS_TOKEN));
+app.use("/image/profile_picture", RequiresAuth, express.static("public/image"));
 
 declare global {
   namespace Express {

@@ -13,7 +13,7 @@ import {
 } from "@remix-run/react";
 import stylesheet from "./tailwind.css?url";
 import { Navbar } from "./components/navbar";
-import { me } from "./util/user";
+import { me } from "./service/user";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },

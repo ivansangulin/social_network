@@ -7,7 +7,7 @@ import {
 import { Link, useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { zfd } from "zod-form-data";
-import { getCookie } from "~/util/user";
+import { getCookie } from "~/service/user";
 
 const registrationSchema = zfd.formData({
   username: zfd.text(),

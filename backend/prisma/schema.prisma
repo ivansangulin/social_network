@@ -15,16 +15,18 @@ model User {
   profile_picture_uuid String?      @db.VarChar()
   locked_profile       Boolean      @db.Boolean()
   uuid                 String       @unique @db.VarChar()
-  Friendship           Friendship[]
+  FriendshipToFriend   Friendship[] @relation("friendRelation")
+  FriendshipToUser     Friendship[] @relation("userRelation")
 
   @@map("users")
 }
 
 model Friendship {
-  id        Int  @default(autoincrement())
+  id        Int  @unique @default(autoincrement())
   user_id   Int  @db.Integer()
+  user      User @relation(name: "userRelation", fields: [user_id], references: [id])
   friend_id Int  @db.Integer()
-  friend    User @relation(fields: [friend_id], references: [id])
+  friend    User @relation(name: "friendRelation", fields: [friend_id], references: [id])
 
   @@id(name: "friendship_id", [user_id, friend_id])
   @@map("friendships")

@@ -1,5 +1,5 @@
 import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { me, User } from "~/service/user";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -33,21 +33,27 @@ const ProfileData = ({
   return (
     <div className="flex flex-col items-center space-y-2">
       {user.profile_picture_uuid && backendUrl ? (
-        <div className="rounded-full overflow-hidden aspect-square max-w-[150px]">
+        <Link
+          to={"/my-profile"}
+          className="rounded-full overflow-hidden aspect-square max-w-[150px]"
+        >
           <img
             alt=""
             src={`${backendUrl}/image/profile_picture/${user.profile_picture_uuid}`}
             className="object-cover min-h-full"
           />
-        </div>
+        </Link>
       ) : (
-        <div className="overflow-hidden max-w-[150px]">
+        <Link to={"/my-profile"} className="overflow-hidden max-w-[150px]">
           <img alt="" src="/images/default_profile_picture.png" />
-        </div>
+        </Link>
       )}
-      <div className="text-2xl text-center min-w-[250px] shadow-2xl drop-shadow-2xl rounded-md border border-slate-100 p-1">
+      <Link
+        to={"/my-profile"}
+        className="text-2xl text-center min-w-[250px] shadow-2xl drop-shadow-2xl rounded-md border border-slate-100 p-1"
+      >
         {user.username}
-      </div>
+      </Link>
     </div>
   );
 };

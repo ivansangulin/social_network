@@ -15,8 +15,9 @@ model User {
   profile_picture_uuid String?      @db.VarChar()
   locked_profile       Boolean      @db.Boolean()
   uuid                 String       @unique @db.VarChar()
-  FriendshipToFriend   Friendship[] @relation("friendRelation")
-  FriendshipToUser     Friendship[] @relation("userRelation")
+  friendshipToFriend   Friendship[] @relation("friendRelation")
+  friendshipToUser     Friendship[] @relation("userRelation")
+  posts                Post[]
 
   @@map("users")
 }
@@ -30,4 +31,36 @@ model Friendship {
 
   @@id(name: "friendship_id", [user_id, friend_id])
   @@map("friendships")
+}
+
+model Post {
+  id      Int       @id @unique @default(autoincrement())
+  text    String    @db.VarChar()
+  created DateTime  @default(now()) @db.Date()
+  user_id Int       @db.Integer()
+  user    User      @relation(fields: [user_id], references: [id])
+  likes   Like[]
+  comments Comment[]
+
+  @@map("posts")
+}
+
+model Like {
+  id      Int  @id @unique @default(autoincrement())
+  post_id Int  @db.Integer()
+  post    Post @relation(fields: [post_id], references: [id])
+  user_id Int  @db.Integer()
+
+  @@map("likes")
+}
+
+model Comment {
+  id      Int      @id @unique @default(autoincrement())
+  user_id Int      @db.Integer()
+  post_id Int      @db.Integer()
+  post    Post     @relation(fields: [post_id], references: [id])
+  text    String   @db.VarChar()
+  created DateTime @default(now()) @db.Date()
+
+  @@map("comments")
 }

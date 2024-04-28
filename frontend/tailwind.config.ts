@@ -10,6 +10,10 @@ export default {
         secondary: "#c4c1e0",
       },
     },
+    screens: {
+      "3xl": "1920px",
+      "4xl": "2560px",
+    },
   },
   plugins: [],
 } satisfies Config;

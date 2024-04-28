@@ -52,7 +52,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <div className="min-h-screen w-full flex flex-col">
+        <div className="min-h-screen w-full flex flex-col relative">
           <Navbar />
           {children}
         </div>

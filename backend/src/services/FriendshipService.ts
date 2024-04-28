@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const FRIENDS_PAGING_TAKE = 10;
+const FRIENDS_PAGING_TAKE = 20;
 
 export const getFriends = async (
   userId: number,
@@ -122,11 +122,7 @@ export const getFriends = async (
     friends: friendsFiltered,
     cursor:
       friendsFiltered.length > 0
-        ? friendsFiltered[
-            FRIENDS_PAGING_TAKE >= friendsFiltered.length
-              ? friendsFiltered.length - 1
-              : FRIENDS_PAGING_TAKE - 1
-          ].id
+        ? friendsFiltered[friendsFiltered.length - 1].id
         : 0,
   };
   return friendsPaging;

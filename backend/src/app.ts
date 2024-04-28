@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { json } from "body-parser";
 import friendshipRouter from "./controllers/FriendshipController";
 import { RequiresAuth } from "./middleware/auth";
+import postRouter from "./controllers/PostController";
 
 dotenv.config();
 const env = process.env;
@@ -25,6 +26,7 @@ declare global {
 
 app.use("/user", userRouter);
 app.use("/friendship", RequiresAuth, friendshipRouter);
+app.use("/post", RequiresAuth, postRouter);
 
 app.listen(port, async () => {
   console.log(`App running in port ${port}`);

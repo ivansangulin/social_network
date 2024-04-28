@@ -44,14 +44,14 @@ export default () => {
       </div>
       <hr className="w-6/12" />
       <div className="flex space-x-8 w-6/12">
-        <FriendShips />
+        <Friendships />
         <div className="basis-3/4"></div>
       </div>
     </div>
   );
 };
 
-const FriendShips = () => {
+const Friendships = () => {
   const { friendsPaging, backendUrl } = useLoaderData<typeof loader>();
   const [count, setCount] = useState<number>(friendsPaging?.count ?? 0);
   const [cursor, setCursor] = useState<number>(friendsPaging?.cursor ?? 0);

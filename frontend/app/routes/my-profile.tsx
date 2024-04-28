@@ -1,6 +1,6 @@
 import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
-import { useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Friend, FriendsPagingType, getFriends } from "~/service/friendship";
 import { me } from "~/service/user";
 
@@ -103,13 +103,18 @@ const FriendShips = () => {
     }
   };
 
-  const fetch = async () => {
+  const fetch = () => {
     setFetching(true);
-    await fetcher.load(
+    fetcher.load(
       `/resource/get-friends?search=${search}${
         newSearch ? "" : `&cursor=${cursor}`
       }`
     );
+  };
+
+  const handleNewSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.currentTarget.value);
+    setNewSearch(true);
   };
 
   return (
@@ -122,10 +127,7 @@ const FriendShips = () => {
         type="text"
         className="rounded-lg min-h-12 px-4 border border-slate-300"
         placeholder="Search friends by username..."
-        onChange={(e) => {
-          setSearch(e.currentTarget.value);
-          setNewSearch(true);
-        }}
+        onChange={handleNewSearch}
       />
       {friendsPaging?.friends ? (
         friends.length > 0 ? (

@@ -10,6 +10,9 @@ import {
 } from "../services/UserService";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+import { ISocket } from "../app";
+import { unescape } from "querystring";
 
 dotenv.config();
 const env = process.env;
@@ -92,5 +95,33 @@ export const RequiresAuth = async (
     next();
   } catch (err) {
     return res.status(500).send("Error occured verifying session");
+  }
+};
+
+export const SocketAuth = async (socket: ISocket, next: any) => {
+  try {
+    const signedCookies = socket.handshake.headers.authorization?.split("=")[1];
+    if (!signedCookies) {
+      throw new Error("No cookies");
+    }
+    const decodedCookie = unescape(signedCookies);
+    const cookie = cookieParser.signedCookie(
+      decodedCookie,
+      env.SECRET_ACCESS_TOKEN ?? ""
+    );
+    if (!cookie) {
+      throw new Error("Unauthorized");
+    }
+    const secret: string | undefined = env.SECRET_ACCESS_TOKEN;
+    if (!secret) {
+      throw new Error();
+    }
+    const decoded = jwt.verify(cookie, secret);
+    const token = decoded as JwtPayload;
+    const { id } = token;
+    socket.userId = id;
+    next();
+  } catch (err) {
+    next(err);
   }
 };

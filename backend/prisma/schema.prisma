@@ -34,12 +34,12 @@ model Friendship {
 }
 
 model Post {
-  id      Int       @id @unique @default(autoincrement())
-  text    String    @db.VarChar()
-  created DateTime  @default(now()) @db.Date()
-  user_id Int       @db.Integer()
-  user    User      @relation(fields: [user_id], references: [id])
-  likes   Like[]
+  id       Int       @id @unique @default(autoincrement())
+  text     String    @db.VarChar()
+  created  DateTime  @default(now()) @db.Date()
+  user_id  Int       @db.Integer()
+  user     User      @relation(fields: [user_id], references: [id])
+  likes    Like[]
   comments Comment[]
 
   @@map("posts")
@@ -63,4 +63,14 @@ model Comment {
   created DateTime @default(now()) @db.Date()
 
   @@map("comments")
+}
+
+model Chat {
+  id        Int    @unique @default(autoincrement())
+  uuid      String @unique @db.VarChar() @default(uuid())
+  user_id   Int    @db.Integer()
+  friend_id Int    @db.Integer()
+
+  @@id(name: "chat_id", [user_id, friend_id])
+  @@map("chats")
 }

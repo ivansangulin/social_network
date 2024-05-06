@@ -9,6 +9,8 @@ import postRouter from "./controllers/PostController";
 import { Server, Socket } from "socket.io";
 import http from "http";
 import messagingRouter from "./controllers/MessagingController";
+import { createMessage } from "./services/MessagingService";
+import { findUserUuidById } from "./services/UserService";
 
 declare global {
   namespace Express {
@@ -46,31 +48,38 @@ const io = new Server(server, {
 
 io.use(SocketAuth);
 
-io.on("connection", (socket: ISocket) => {
+io.on("connection", async (socket: ISocket) => {
   console.log("New client connected");
   console.log(socket.userId);
+  const userUuid = await findUserUuidById(Number(socket.userId));
+  socket.join(userUuid);
 
-  socket.on("joinChat", (chatUuid) => {
-    socket.join(chatUuid);
-    socket.on(
-      chatUuid,
-      ({ chatUuid, message }: { chatUuid: string; message: string }) => {
-        io.to(chatUuid).emit(chatUuid, message);
-      }
-    );
-    console.log(`User joined chat: ${chatUuid}`);
-  });
-
-  socket.on("leaveChat", (chatUuid) => {
-    console.log(`User left chat ${chatUuid}`);
-    socket.off(chatUuid, (message) => {
-      console.log(message);
-    });
-    socket.leave(chatUuid);
-  });
+  const messageListener = async ({
+    friendUuid,
+    message,
+  }: {
+    friendUuid: string;
+    message: string;
+  }) => {
+    try {
+      const senderUuid = await createMessage(
+        Number(socket.userId),
+        friendUuid,
+        message
+      );
+      io.to(friendUuid).emit(userUuid, { sender: senderUuid, message });
+      io.to(userUuid).emit(friendUuid, { sender: senderUuid, message });
+    } catch (err) {
+      console.log(err);
+      io.to(userUuid).emit(friendUuid, "Failed to store message");
+    }
+  };
+  socket.on("message", messageListener);
 
   socket.on("disconnect", () => {
     console.log("Client disconnected" + " " + socket.userId);
+    socket.off("message", messageListener);
+    socket.leave(userUuid);
   });
 });
 

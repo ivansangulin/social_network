@@ -61,7 +61,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         socketTmp.disconnect();
       };
     }
-  }, []);
+  }, [user]);
 
   return (
     <html lang="en">

@@ -17,6 +17,7 @@ import {
   XMarkIcon,
 } from "~/components/icons";
 import { SocketContext } from "~/root";
+import { Message } from "~/service/chat";
 import { Friend, FriendsPagingType, getFriends } from "~/service/friendship";
 import { me, User } from "~/service/user";
 
@@ -270,7 +271,7 @@ const Chats = ({
         window.removeEventListener("click", closePopover);
       };
     }
-  }, []);
+  }, [popoverOpen, friends]);
 
   useEffect(() => {
     organizeChats();
@@ -383,22 +384,14 @@ const Chat = ({
   const [open, setOpen] = useState<boolean>(defaultOpen);
   const [rows, setRows] = useState<number>(1);
   const [textAreaValue, setTextAreaValue] = useState<string>("");
-  const [chatUuid, setChatUuid] = useState<string>();
+  const [messages, setMessages] = useState<Message[]>([]);
 
-  const fetcher = useFetcher();
+  const messageFetcher = useFetcher();
+
+  const messageRef = useRef<HTMLDivElement>(null);
 
   const maxRows = 5;
   const colsDefault = 24;
-
-  useEffect(() => {
-    fetcher.load(`/resource/get-chat-uuid?friendUuid=${friend.uuid}`);
-  }, []);
-
-  useEffect(() => {
-    if (fetcher.data && !chatUuid) {
-      setChatUuid(fetcher.data as string);
-    }
-  }, [fetcher.data]);
 
   useEffect(() => {
     if (popoverOpen) {
@@ -407,36 +400,34 @@ const Chat = ({
   }, [popoverOpen]);
 
   useEffect(() => {
-    if (chatUuid) {
-      const handleNewMessage = (message: string) => {
-        console.log(message);
-      };
-      socket?.emit("joinChat", chatUuid);
-      socket?.on(chatUuid, handleNewMessage);
-      return () => {
-        socket?.emit("leaveChat", chatUuid);
-        socket?.off(chatUuid, handleNewMessage);
-      };
-    }
-  }, [chatUuid]);
+    const handleNewMessage = (message: Message) => {
+      setMessages((messages) => {
+        return [message, ...messages];
+      });
+      if (messageRef.current) {
+        messageRef.current.scrollIntoView({ behavior: "instant" });
+      }
+    };
+    messageFetcher.load(`/resource/get-messages?friendUuid=${friend.uuid}`);
+    socket?.on(friend.uuid, handleNewMessage);
+    return () => {
+      socket?.off(friend.uuid, handleNewMessage);
+    };
+  }, []);
 
-  const handleTextAreaChange = (e: FormEvent<HTMLTextAreaElement>) => {
-    setTextAreaValue(e.currentTarget.value);
-    if (rows <= maxRows) {
-      const element = e.target as HTMLTextAreaElement;
-      const newRows = Math.max(Math.ceil(element.textLength / colsDefault), 1);
-      if (newRows <= maxRows && newRows !== rows) setRows(newRows);
+  useEffect(() => {
+    if (messageFetcher.data) {
+      setMessages((messages) => {
+        return [...(messageFetcher.data as Message[]), ...messages];
+      });
     }
-  };
+  }, [messageFetcher.data]);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && chatUuid) {
-      e.preventDefault();
-      socket?.emit(chatUuid, { chatUuid, message: textAreaValue });
-      setTextAreaValue("");
-      setRows(1);
+  useEffect(() => {
+    if (messageRef.current) {
+      messageRef.current.scrollIntoView({ behavior: "instant" });
     }
-  };
+  }, [messages]);
 
   const handleOpenClose = (e: MouseEvent<HTMLButtonElement>) => {
     closePopover();
@@ -448,6 +439,28 @@ const Chat = ({
       }
     }
     setOpen(!open);
+  };
+
+  const handleTextAreaChange = (e: FormEvent<HTMLTextAreaElement>) => {
+    setTextAreaValue(e.currentTarget.value);
+    if (rows <= maxRows) {
+      const element = e.target as HTMLTextAreaElement;
+      console.log(element.textLength);
+      const newRows = Math.max(Math.ceil(element.textLength / colsDefault), 1);
+      if (newRows <= maxRows && newRows !== rows) setRows(newRows);
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      socket?.emit("message", {
+        friendUuid: friend.uuid,
+        message: textAreaValue,
+      });
+      setTextAreaValue("");
+      setRows(1);
+    }
   };
 
   const handleDelete = (e: MouseEvent<HTMLButtonElement>) => {
@@ -469,7 +482,19 @@ const Chat = ({
       </div>
       {open && (
         <div className="border-x border-black">
-          <div className="h-72"></div>
+          <div className="h-72 flex flex-col-reverse p-4 overflow-y-auto">
+            <div ref={messageRef} />
+            {messages.map((msg, index) => (
+              <div
+                className={`max-w-[40%] ${
+                  msg.sender === friend.uuid ? "self-start" : "self-end"
+                }`}
+                key={index}
+              >
+                {msg.message}
+              </div>
+            ))}
+          </div>
           <div className="border-t border-black flex justify-between p-2">
             <textarea
               rows={rows}

@@ -57,3 +57,16 @@ export const findMyself = async (id: number) => {
   });
   return user;
 };
+
+export const findUserUuidById = async (id: number) => {
+  const { uuid: userUuid } = await prisma.user.findFirstOrThrow({
+    select: {
+      uuid: true,
+    },
+    where: {
+      id: id,
+    },
+  });
+
+  return userUuid;
+};

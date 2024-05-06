@@ -1,21 +1,32 @@
 import { Request, Response, Router } from "express";
-import { getChatUuid } from "../services/MessagingService";
+import { getMessages } from "../services/MessagingService";
 import { check } from "express-validator";
 
 const messagingRouter = Router();
 
 messagingRouter.get(
-  "/chat-uuid",
-  check("friendUuid").isString().trim().notEmpty(),
+  "/messages",
+  check("friendUuid").isString().trim().notEmpty().isUUID(),
+  check("chatUuid").isString().trim().notEmpty().isUUID(),
   async (req: Request, res: Response) => {
     const userId = req.userId;
     const friendUuid = req.query.friendUuid as string;
+    const chatUuid = req.query.chatUuid as string;
+    const cursor =
+      typeof req.query.cursor === "string"
+        ? Number(req.query.cursor)
+        : undefined;
     try {
-      const chatUuid = await getChatUuid(Number(userId), friendUuid);
-      return res.status(200).json(chatUuid);
+      const messages = await getMessages(
+        Number(userId),
+        friendUuid,
+        chatUuid,
+        cursor
+      );
+      return res.status(200).send(messages);
     } catch (err) {
       console.log(err);
-      return res.status(500).send("Failed fetching chat id!");
+      return res.status(500).send("Failed fetching messages!");
     }
   }
 );

@@ -127,3 +127,22 @@ export const getFriends = async (
   };
   return friendsPaging;
 };
+
+export const areFriends = async (userId: number, friendId: number) => {
+  try {
+    const friendship = await prisma.friendship.findFirst({
+      where: {
+        OR: [
+          { AND: [{ user_id: userId }, { friend_id: friendId }] },
+          { AND: [{ user_id: friendId, friend_id: userId }] },
+        ],
+      },
+    });
+    if (!friendship) {
+      return false;
+    }
+    return true;
+  } catch (err) {
+    return false;
+  }
+};

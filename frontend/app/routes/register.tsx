@@ -20,24 +20,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const registrationData = await registrationSchema.safeParse(formData);
   if (registrationData.success) {
-    const registrationResponse = await fetch(
-      `${process.env.BACKEND_URL}/user/register`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-        body: JSON.stringify(registrationData.data),
+    try {
+      const registrationResponse = await fetch(
+        `${process.env.BACKEND_URL}/user/register`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify(registrationData.data),
+        }
+      );
+      if (!registrationResponse.ok) {
+        return json(await registrationResponse.text());
       }
-    );
-    if (!registrationResponse.ok) {
-      return json(await registrationResponse.text());
+      const cookie = registrationResponse.headers.get("set-cookie");
+      if (cookie) {
+        return redirect("/", { headers: { "Set-Cookie": cookie } });
+      }
+      return json("Failed to register!");
+    } catch (err) {
+      return json("Failed to register!");
     }
-    const cookie = registrationResponse.headers.get("set-cookie");
-    if (cookie) {
-      return redirect("/", { headers: { "Set-Cookie": cookie } });
-    }
-    return json("Failed to register!");
   }
   return json("Data can't be empty!");
 };

@@ -18,21 +18,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const loginData = await loginSchema.safeParse(formData);
   if (loginData.success) {
-    const loginResponse = await fetch(`${process.env.BACKEND_URL}/user/login`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-      body: JSON.stringify(loginData.data),
-    });
-    if (!loginResponse.ok) {
-      return json(await loginResponse.text());
+    try {
+      const loginResponse = await fetch(
+        `${process.env.BACKEND_URL}/user/login`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify(loginData.data),
+        }
+      );
+      if (!loginResponse.ok) {
+        return json(await loginResponse.text());
+      }
+      const cookie = loginResponse.headers.get("set-cookie");
+      if (cookie) {
+        return redirect("/", { headers: { "Set-Cookie": cookie } });
+      }
+      return json("Failed to login!");
+    } catch (err) {
+      return json("Failed to login!");
     }
-    const cookie = loginResponse.headers.get("set-cookie");
-    if (cookie) {
-      return redirect("/", { headers: { "Set-Cookie": cookie } });
-    }
-    return json("Failed to login!");
   }
   return json("Data can't be empty!");
 };

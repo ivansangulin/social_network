@@ -9,6 +9,7 @@ import {
   KeyboardEvent,
   useContext,
   MouseEvent,
+  useCallback,
 } from "react";
 import {
   ChevronDoubleDown,
@@ -262,22 +263,7 @@ const Chats = ({
   const elementWidth = 288;
   const triggerWidth = 40;
 
-  useEffect(() => {
-    if (window) {
-      window.addEventListener("resize", organizeChats);
-      window.addEventListener("click", closePopover);
-      return () => {
-        window.removeEventListener("resize", organizeChats);
-        window.removeEventListener("click", closePopover);
-      };
-    }
-  }, [popoverOpen, friends]);
-
-  useEffect(() => {
-    organizeChats();
-  }, [friends]);
-
-  const organizeChats = () => {
+  const organizeChats = useCallback(() => {
     if (containerRef.current) {
       const containerWidth = containerRef.current.clientWidth;
       const nrOfChatsToShow = Math.floor(
@@ -292,13 +278,25 @@ const Chats = ({
         setPopoverChats(friends.slice(nrOfChatsToShow));
       }
     }
-  };
+  }, [friends, popoverChats.length]);
 
-  const closePopover = () => {
+  const closePopover = useCallback(() => {
     if (popoverOpen) {
       setPopoverOpen(false);
     }
-  };
+  }, [popoverOpen]);
+
+  useEffect(() => {
+    if (window) {
+      window.addEventListener("resize", organizeChats);
+      window.addEventListener("click", closePopover);
+      organizeChats();
+      return () => {
+        window.removeEventListener("resize", organizeChats);
+        window.removeEventListener("click", closePopover);
+      };
+    }
+  }, [closePopover, organizeChats]);
 
   return (
     <div
@@ -445,7 +443,6 @@ const Chat = ({
     setTextAreaValue(e.currentTarget.value);
     if (rows <= maxRows) {
       const element = e.target as HTMLTextAreaElement;
-      console.log(element.textLength);
       const newRows = Math.max(Math.ceil(element.textLength / colsDefault), 1);
       if (newRows <= maxRows && newRows !== rows) setRows(newRows);
     }
@@ -482,11 +479,11 @@ const Chat = ({
       </div>
       {open && (
         <div className="border-x border-black">
-          <div className="h-72 flex flex-col-reverse p-4 overflow-y-auto">
+          <div className="h-72 flex flex-col-reverse space-y-2 p-4 overflow-y-auto">
             <div ref={messageRef} />
             {messages.map((msg, index) => (
               <div
-                className={`max-w-[40%] ${
+                className={`max-w-[80%] bg-primary text-white rounded-md text-sm break-words p-2 ${
                   msg.sender === friend.uuid ? "self-start" : "self-end"
                 }`}
                 key={index}

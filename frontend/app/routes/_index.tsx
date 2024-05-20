@@ -18,7 +18,7 @@ import {
   XMarkIcon,
 } from "~/components/icons";
 import { SocketContext } from "~/root";
-import { Message } from "~/service/chat";
+import { Message, MessagesPagingType } from "~/service/chat";
 import { Friend, FriendsPagingType, getFriends } from "~/service/friendship";
 import { me, User } from "~/service/user";
 
@@ -206,10 +206,9 @@ const Friends = ({
           friends.length > 0 ? (
             <div className="flex flex-col gap-4 min-w-full">
               {friends.map(({ friend }) => (
-                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-                <div
+                <button
                   key={friend.uuid}
-                  className="flex items-center space-x-2 rounded-md p-2 hover:bg-slate-100 hover:cursor-pointer"
+                  className="flex items-center space-x-2 rounded-md p-2 hover:bg-slate-100 text-left"
                   onClick={() => {
                     onNewChat(friend);
                   }}
@@ -228,7 +227,7 @@ const Friends = ({
                     </div>
                   )}
                   <div className="text">{friend.username}</div>
-                </div>
+                </button>
               ))}
             </div>
           ) : (
@@ -386,7 +385,11 @@ const Chat = ({
 
   const messageFetcher = useFetcher();
 
+  const cursor = useRef<number>();
+  const hasMore = useRef<boolean>(true);
+  const fetching = useRef<boolean>(false);
   const messageRef = useRef<HTMLDivElement>(null);
+  const messageContainerRef = useRef<HTMLDivElement>(null);
 
   const maxRows = 5;
   const colsDefault = 24;
@@ -414,18 +417,45 @@ const Chat = ({
   }, []);
 
   useEffect(() => {
-    if (messageFetcher.data) {
+    const messageFetcherData = messageFetcher.data as MessagesPagingType;
+    if (messageFetcherData) {
+      cursor.current = messageFetcherData.cursor;
+      hasMore.current =
+        messages.length + messageFetcherData.messages.length !==
+        messageFetcherData.count;
       setMessages((messages) => {
-        return [...(messageFetcher.data as Message[]), ...messages];
+        return [...messages, ...messageFetcherData.messages];
       });
     }
+    fetching.current = false;
   }, [messageFetcher.data]);
 
   useEffect(() => {
-    if (messageRef.current) {
-      messageRef.current.scrollIntoView({ behavior: "instant" });
+    const handleScroll = () => {
+      if (messageContainerRef.current) {
+        if (
+          messageContainerRef.current.scrollHeight >
+            messageContainerRef.current.offsetHeight -
+              messageContainerRef.current.scrollTop ||
+          fetching.current ||
+          !hasMore
+        ) {
+          return;
+        }
+        fetching.current = true;
+        messageFetcher.load(
+          `/resource/get-messages?friendUuid=${friend.uuid}&cursor=${cursor.current}`
+        );
+      }
+    };
+    const messageRefCurrent = messageContainerRef.current;
+    if (messageRefCurrent) {
+      messageRefCurrent.addEventListener("scroll", handleScroll);
+      return () => {
+        messageRefCurrent.removeEventListener("scroll", handleScroll);
+      };
     }
-  }, [messages]);
+  }, []);
 
   const handleOpenClose = (e: MouseEvent<HTMLButtonElement>) => {
     closePopover();
@@ -479,7 +509,10 @@ const Chat = ({
       </div>
       {open && (
         <div className="border-x border-black">
-          <div className="h-72 flex flex-col-reverse space-y-2 p-4 overflow-y-auto">
+          <div
+            className="h-72 flex flex-col-reverse space-y-2 p-4 overflow-y-auto"
+            ref={messageContainerRef}
+          >
             <div ref={messageRef} />
             {messages.map((msg, index) => (
               <div

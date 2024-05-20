@@ -11,7 +11,6 @@ messagingRouter.get(
   async (req: Request, res: Response) => {
     const userId = req.userId;
     const friendUuid = req.query.friendUuid as string;
-    const chatUuid = req.query.chatUuid as string;
     const cursor =
       typeof req.query.cursor === "string"
         ? Number(req.query.cursor)
@@ -20,7 +19,6 @@ messagingRouter.get(
       const messages = await getMessages(
         Number(userId),
         friendUuid,
-        chatUuid,
         cursor
       );
       return res.status(200).send(messages);

@@ -21,7 +21,7 @@ const getFriendIdFromUuid = async (friendUuid: string) => {
 export const createMessage = async (
   userId: number,
   friendUuid: string,
-  message: string,
+  message: string
 ) => {
   const friendId = await getFriendIdFromUuid(friendUuid);
 
@@ -49,7 +49,6 @@ export const createMessage = async (
 export const getMessages = async (
   userId: number,
   friendUuid: string,
-  chatUuid: string,
   cursor: number | undefined
 ) => {
   const friendId = await getFriendIdFromUuid(friendUuid);
@@ -59,24 +58,35 @@ export const getMessages = async (
     throw new Error("Not friends!");
   }
 
-  const messages = await prisma.message.findMany({
-    take: MESSAGES_PAGING_TAKE,
-    skip: !!cursor ? 1 : 0,
-    cursor: cursor ? { id: cursor } : undefined,
-    select: {
-      message: true,
-      to_user_id: true,
-      from_user_id: true,
-      created: true,
-    },
-    where: {
-      OR: [
-        { AND: [{ to_user_id: userId }, { from_user_id: friendId }] },
-        { AND: [{ to_user_id: friendId }, { from_user_id: userId }] },
-      ],
-    },
-    orderBy: { created: "desc" },
-  });
+  const [count, messages] = await Promise.all([
+    prisma.message.count({
+      where: {
+        OR: [
+          { AND: [{ to_user_id: userId }, { from_user_id: friendId }] },
+          { AND: [{ to_user_id: friendId }, { from_user_id: userId }] },
+        ],
+      },
+    }),
+    prisma.message.findMany({
+      take: MESSAGES_PAGING_TAKE,
+      skip: !!cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
+      select: {
+        message: true,
+        to_user_id: true,
+        from_user_id: true,
+        created: true,
+        id: true,
+      },
+      where: {
+        OR: [
+          { AND: [{ to_user_id: userId }, { from_user_id: friendId }] },
+          { AND: [{ to_user_id: friendId }, { from_user_id: userId }] },
+        ],
+      },
+      orderBy: { created: "desc" },
+    }),
+  ]);
 
   const userUuid = await findUserUuidById(userId);
 
@@ -89,5 +99,11 @@ export const getMessages = async (
     }
   );
 
-  return messagesMapped;
+  const messagesPaging = {
+    count,
+    messages: messagesMapped,
+    cursor: messages.length > 0 ? messages[messages.length - 1].id : 0,
+  };
+
+  return messagesPaging;
 };

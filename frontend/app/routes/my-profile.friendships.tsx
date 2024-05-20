@@ -64,9 +64,11 @@ export default () => {
       } else {
         setNewSearch(false);
       }
-      setFriends(fetcherFriends);
+      setFriends((friends) => [...friends, ...fetcherFriends]);
       setCursor(fetcherFriendsPaging.cursor);
-      setHasMore(fetcherFriends.length !== fetcherFriendsPaging.count);
+      setHasMore(
+        friends.length + fetcherFriends.length !== fetcherFriendsPaging.count
+      );
     }
   }, [fetcher.data]);
 

@@ -6,7 +6,14 @@ const messageSchema = z.object({
   message: z.string(),
 });
 
+const messagesPagingSchema = z.object({
+  count: z.number(),
+  cursor: z.number(),
+  messages: z.array(messageSchema),
+});
+
 export type Message = z.infer<typeof messageSchema>;
+export type MessagesPagingType = z.infer<typeof messagesPagingSchema>;
 
 export const getMessages = async (
   friendUuid: string,
@@ -34,9 +41,9 @@ export const getMessages = async (
       return null;
     }
 
-    const messages = await z
-      .array(messageSchema)
-      .parse(await messagesResponse.json());
+    const messages = await messagesPagingSchema.parse(
+      await messagesResponse.json()
+    );
 
     return messages;
   } catch (err) {

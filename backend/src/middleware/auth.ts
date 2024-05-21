@@ -100,7 +100,7 @@ export const RequiresAuth = async (
 
 export const SocketAuth = async (socket: ISocket, next: any) => {
   try {
-    const signedCookies = socket.handshake.headers.authorization?.split("=")[1];
+    const signedCookies = socket.handshake.headers.cookie?.split("=")[1];
     if (!signedCookies) {
       throw new Error("No cookies");
     }

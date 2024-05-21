@@ -188,7 +188,7 @@ const Friends = ({
   };
 
   return (
-    <div className="basis-1/5 border-r border-slate-400 max-h-[calc(100vh-6rem)] overflow-y-auto">
+    <div className="basis-1/5 border-r border-slate-400 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin">
       <div className="flex flex-col items-center space-y-6 w-full p-4">
         <div className="flex flex-col items-center space-y-6 w-full">
           <div className="flex space-x-4 justify-center items-center w-full">
@@ -510,7 +510,7 @@ const Chat = ({
       {open && (
         <div className="border-x border-black">
           <div
-            className="h-72 flex flex-col-reverse space-y-2 p-4 overflow-y-auto"
+            className="h-72 flex flex-col-reverse space-y-2 p-4 overflow-y-auto scrollbar-thin"
             ref={messageContainerRef}
           >
             <div ref={messageRef} />

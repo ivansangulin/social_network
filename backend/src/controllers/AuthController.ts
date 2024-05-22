@@ -33,16 +33,16 @@ export type UserLoginType = z.infer<typeof userLoginSchema>;
 
 userRouter.post(
   "/register",
-  check("username").notEmpty().withMessage("Username can't be empty").trim(),
+  check("username").trim().notEmpty().withMessage("Username can't be empty"),
   check("email")
     .isEmail()
     .withMessage("Enter a valid email address")
     .normalizeEmail(),
-  check("password").notEmpty().withMessage("Password can't be empty").trim(),
+  check("password").trim().notEmpty().withMessage("Password can't be empty"),
   check("repeatedPassword")
+    .trim()
     .notEmpty()
-    .withMessage("Repeated password can't be empty")
-    .trim(),
+    .withMessage("Repeated password can't be empty"),
   Validate,
   validateUserRegistrationData,
   async (req: Request, res: Response) => {
@@ -53,7 +53,7 @@ userRouter.post(
       res.cookie("session", tokenObj.token, tokenObj.cookieOptions);
       return res.status(200).send("Successfully registered!");
     } catch (err) {
-      return res.status(400).send("Couldn't create user!");
+      return res.status(500).send("Couldn't create user!");
     }
   }
 );

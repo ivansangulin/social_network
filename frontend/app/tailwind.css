@@ -13,3 +13,7 @@
 .scrollbar-thin {
   scrollbar-width: thin;
 }
+
+.transition-height {
+  transition: height 0.4s ease;
+}

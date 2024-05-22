@@ -1,5 +1,7 @@
 import { Router, Request, Response } from "express";
-import { getUserPosts } from "../services/PostService";
+import { createPost, getUserPosts } from "../services/PostService";
+import { check } from "express-validator";
+import Validate from "../middleware/validate";
 
 const postRouter = Router();
 
@@ -15,5 +17,26 @@ postRouter.get("/my-posts", async (req: Request, res: Response) => {
     return res.status(500).send("Error occured fetching user posts!");
   }
 });
+
+postRouter.post(
+  "/create",
+  check("text")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("Post text can't be empty!"),
+  Validate,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.userId;
+      const text = req.body.text as string;
+      const post = await createPost(Number(userId), text);
+      return res.status(200).json(post);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Couldn't create post!");
+    }
+  }
+);
 
 export default postRouter;

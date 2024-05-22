@@ -46,3 +46,30 @@ export const getUserPosts = async (request: Request, cursor: string | null) => {
     return null;
   }
 };
+
+export const createPost = async (request: Request, text: string) => {
+  const cookie = getCookie(request);
+  if (!cookie) {
+    return false;
+  }
+  try {
+    const createPostResponse = await fetch(
+      `${process.env.BACKEND_URL}/post/create`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: cookie,
+        },
+        body: JSON.stringify({ text: text }),
+      }
+    );
+    if (!createPostResponse.ok) {
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.log(err);
+    return false;
+  }
+};

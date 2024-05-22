@@ -1,13 +1,14 @@
 import { Request, Response, Router } from "express";
 import { getMessages } from "../services/MessagingService";
 import { check } from "express-validator";
+import Validate from "../middleware/validate";
 
 const messagingRouter = Router();
 
 messagingRouter.get(
   "/messages",
   check("friendUuid").isString().trim().notEmpty().isUUID(),
-  check("chatUuid").isString().trim().notEmpty().isUUID(),
+  Validate,
   async (req: Request, res: Response) => {
     const userId = req.userId;
     const friendUuid = req.query.friendUuid as string;
@@ -16,11 +17,7 @@ messagingRouter.get(
         ? Number(req.query.cursor)
         : undefined;
     try {
-      const messages = await getMessages(
-        Number(userId),
-        friendUuid,
-        cursor
-      );
+      const messages = await getMessages(Number(userId), friendUuid, cursor);
       return res.status(200).send(messages);
     } catch (err) {
       console.log(err);

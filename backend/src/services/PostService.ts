@@ -39,3 +39,14 @@ export const getUserPosts = async (
 
   return userPostPaging;
 };
+
+export const createPost = async (userId: number, text: string) => {
+  const post = await prisma.post.create({
+    data: {
+      user_id: userId,
+      text: text     
+    }
+  });
+
+  return post;
+}

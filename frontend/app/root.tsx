@@ -48,9 +48,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    if (user && !socket && backendURL) {
+    if (user && backendURL) {
       const socketTmp = io(backendURL, {
-        withCredentials: true
+        withCredentials: true,
       });
       setSocket(socketTmp);
       return () => {
@@ -70,7 +70,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <SocketContext.Provider value={socket}>
-          <div className="min-h-screen w-full flex flex-col relative">
+          <div className="min-h-screen w-full flex flex-col relative bg-neutral-100">
             <Navbar />
             {children}
           </div>

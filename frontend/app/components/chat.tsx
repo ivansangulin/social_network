@@ -10,7 +10,7 @@ import {
   KeyboardEvent,
 } from "react";
 import { SocketContext } from "~/root";
-import { Message, MessagesPagingType } from "~/service/chat";
+import { Message, MessagesPaging } from "~/service/chat";
 import {
   ChevronDoubleUp,
   ChevronDoubleDown,
@@ -153,9 +153,12 @@ const Chat = ({
   closePopover: () => void;
 }) => {
   const socket = useContext(SocketContext);
+  const maxRows = 5;
+  const defaultRows = 1;
+  const colsDefault = 24;
 
   const [open, setOpen] = useState<boolean>(defaultOpen);
-  const [rows, setRows] = useState<number>(1);
+  const [rows, setRows] = useState<number>(defaultRows);
   const [textAreaValue, setTextAreaValue] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
 
@@ -167,9 +170,6 @@ const Chat = ({
   const messageRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
-  const maxRows = 5;
-  const colsDefault = 24;
-
   useEffect(() => {
     if (popoverOpen) {
       setOpen(false);
@@ -177,12 +177,14 @@ const Chat = ({
   }, [popoverOpen]);
 
   useEffect(() => {
-    const handleNewMessage = (message: Message) => {
-      setMessages((messages) => {
-        return [message, ...messages];
-      });
-      if (messageRef.current) {
-        messageRef.current.scrollIntoView({ behavior: "instant" });
+    const handleNewMessage = (message: Message | string) => {
+      if (typeof message !== "string") {
+        setMessages((messages) => {
+          return [message, ...messages];
+        });
+        if (messageRef.current) {
+          messageRef.current.scrollIntoView({ behavior: "instant" });
+        }
       }
     };
     messageFetcher.load(`/resource/get-messages?friendUuid=${friend.uuid}`);
@@ -193,11 +195,11 @@ const Chat = ({
   }, []);
 
   useEffect(() => {
-    const messageFetcherData = messageFetcher.data as MessagesPagingType;
+    const messageFetcherData = messageFetcher.data as MessagesPaging | null;
     if (messageFetcherData) {
       cursor.current = messageFetcherData.cursor;
       hasMore.current =
-        messages.length + messageFetcherData.messages.length !==
+        messages.length + messageFetcherData.messages.length <
         messageFetcherData.count;
       setMessages((messages) => {
         return [...messages, ...messageFetcherData.messages];
@@ -214,7 +216,7 @@ const Chat = ({
             messageContainerRef.current.offsetHeight -
               messageContainerRef.current.scrollTop ||
           fetching.current ||
-          !hasMore
+          !hasMore.current
         ) {
           return;
         }
@@ -257,12 +259,7 @@ const Chat = ({
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      socket?.emit("message", {
-        friendUuid: friend.uuid,
-        message: textAreaValue,
-      });
-      setTextAreaValue("");
-      setRows(1);
+      sendMessage();
     }
   };
 
@@ -271,8 +268,17 @@ const Chat = ({
     onDeleteChat();
   };
 
+  const sendMessage = () => {
+    socket?.emit("message", {
+      friendUuid: friend.uuid,
+      message: textAreaValue,
+    });
+    setTextAreaValue("");
+    setRows(defaultRows);
+  };
+
   return (
-    <div className="w-72 border-x-2 border-t-2 border-white">
+    <div className="w-72 px-1">
       <div
         className={`${className} flex items-center justify-between p-2 bg-primary text-white w-full`}
       >
@@ -284,7 +290,7 @@ const Chat = ({
         </button>
       </div>
       {open && (
-        <div className="border-x border-black">
+        <div className="border-x border-black bg-white">
           <div
             className="h-72 flex flex-col-reverse space-y-2 p-4 overflow-y-auto scrollbar-thin"
             ref={messageContainerRef}
@@ -301,7 +307,7 @@ const Chat = ({
               </div>
             ))}
           </div>
-          <div className="border-t border-black flex justify-between p-2">
+          <div className="border-t border-black flex justify-between p-2 bg-white">
             <textarea
               rows={rows}
               cols={colsDefault}
@@ -311,9 +317,9 @@ const Chat = ({
               value={textAreaValue}
               onKeyDown={handleKeyDown}
             />
-            <div className="pl-2">
-              <PaperAirplaneIcon />
-            </div>
+            <button className="pl-2" onClick={sendMessage}>
+              <PaperAirplaneIcon className="hover:fill-primary h-6 w-6" />
+            </button>
           </div>
         </div>
       )}

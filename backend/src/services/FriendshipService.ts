@@ -134,7 +134,7 @@ export const areFriends = async (userId: number, friendId: number) => {
       where: {
         OR: [
           { AND: [{ user_id: userId }, { friend_id: friendId }] },
-          { AND: [{ user_id: friendId, friend_id: userId }] },
+          { AND: [{ user_id: friendId }, { friend_id: userId }] },
         ],
       },
     });
@@ -145,4 +145,28 @@ export const areFriends = async (userId: number, friendId: number) => {
   } catch (err) {
     return false;
   }
+};
+
+export const getFriendsUuids = async (userId: number, userUuid: string) => {
+  const friendshipUuids = await prisma.friendship.findMany({
+    select: {
+      friend: {
+        select: {
+          uuid: true,
+        },
+      },
+      user: {
+        select: {
+          uuid: true,
+        },
+      },
+    },
+    where: { OR: [{ user_id: userId }, { friend_id: userId }] },
+  });
+
+  const friendsUuids = friendshipUuids.map((f) =>
+    f.user.uuid === userUuid ? f.friend.uuid : f.user.uuid
+  );
+
+  return friendsUuids;
 };

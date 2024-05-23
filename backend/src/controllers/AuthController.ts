@@ -5,7 +5,7 @@ import {
   findUserByUsernameOrEmail,
   registerUser,
 } from "../services/UserService";
-import { check } from "express-validator";
+import { check, oneOf } from "express-validator";
 import {
   RequiresAuth,
   validateUserLoginData,
@@ -60,9 +60,21 @@ userRouter.post(
 
 userRouter.post(
   "/login",
-  check("password").notEmpty().trim().withMessage("Password can't be empty"),
-  check("email").optional().trim().isEmail().withMessage("Enter a valid email"),
-  check("username").optional().trim(),
+  check("password").trim().notEmpty().withMessage("Password can't be empty"),
+  oneOf(
+    [
+      check("email")
+        .trim()
+        .notEmpty()
+        .isEmail()
+        .withMessage("Enter a valid email"),
+      check("username")
+        .trim()
+        .notEmpty()
+        .withMessage("Username can't be empty"),
+    ],
+    { message: "Either username or email must be provided" }
+  ),
   Validate,
   validateUserLoginData,
   async (req: Request, res: Response) => {
@@ -81,12 +93,12 @@ userRouter.post(
 );
 
 userRouter.get("/me", RequiresAuth, async (req: Request, res: Response) => {
-  const userId = req.userId;
+  const userId = Number(req.userId);
   if (!userId) {
     return res.sendStatus(401);
   }
   try {
-    const user = await findMyself(Number(userId));
+    const user = await findMyself(userId);
     return res.status(200).json(user);
   } catch (err) {
     return res.status(500).send("Error occured fetching data!");

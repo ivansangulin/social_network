@@ -13,7 +13,7 @@ const messagesPagingSchema = z.object({
 });
 
 export type Message = z.infer<typeof messageSchema>;
-export type MessagesPagingType = z.infer<typeof messagesPagingSchema>;
+export type MessagesPaging = z.infer<typeof messagesPagingSchema>;
 
 export const getMessages = async (
   friendUuid: string,

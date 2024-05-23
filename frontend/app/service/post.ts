@@ -3,11 +3,15 @@ import { getCookie } from "./user";
 
 const postSchema = z.object({
   id: z.number(),
-  created: z.string().transform((val) => new Date(val).toLocaleDateString()),
+  createdLocalDate: z.string(),
   text: z.string(),
   _count: z.object({
     likes: z.number(),
     comments: z.number(),
+  }),
+  user: z.object({
+    username: z.string(),
+    profile_picture_uuid: z.string(),
   }),
 });
 
@@ -47,29 +51,31 @@ export const getUserPosts = async (request: Request, cursor: string | null) => {
   }
 };
 
-export const createPost = async (request: Request, text: string) => {
+export const getMainPagePosts = async (
+  request: Request,
+  cursor: string | null
+) => {
   const cookie = getCookie(request);
   if (!cookie) {
-    return false;
+    return null;
   }
   try {
-    const createPostResponse = await fetch(
-      `${process.env.BACKEND_URL}/post/create`,
+    const postsResponse = await fetch(
+      `${process.env.BACKEND_URL}/post/main-page-posts?cursor=${cursor ?? ""}`,
       {
-        method: "POST",
+        method: "GET",
         headers: {
-          "Content-Type": "application/json",
           Cookie: cookie,
         },
-        body: JSON.stringify({ text: text }),
       }
     );
-    if (!createPostResponse.ok) {
-      return false;
+    if (!postsResponse.ok) {
+      return null;
     }
-    return true;
+    const posts = await postPagingSchema.parse(await postsResponse.json());
+    return posts;
   } catch (err) {
     console.log(err);
-    return false;
+    return null;
   }
 };

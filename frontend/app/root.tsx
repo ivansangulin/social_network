@@ -26,7 +26,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export type rootLoader = typeof loader;
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
-  defaultShouldRevalidate,
   currentUrl,
   nextUrl,
 }) => {
@@ -38,7 +37,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   ) {
     return true;
   }
-  return defaultShouldRevalidate;
+  return false;
 };
 
 export const SocketContext = createContext<Socket | null>(null);
@@ -70,7 +69,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <SocketContext.Provider value={socket}>
-          <div className="min-h-screen w-full flex flex-col relative bg-neutral-100">
+          <div className="min-h-screen w-full flex flex-col relative bg-indigo-50 bg-opacity-50">
             <Navbar />
             {children}
           </div>

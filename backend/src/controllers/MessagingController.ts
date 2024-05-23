@@ -10,14 +10,14 @@ messagingRouter.get(
   check("friendUuid").isString().trim().notEmpty().isUUID(),
   Validate,
   async (req: Request, res: Response) => {
-    const userId = req.userId;
+    const userId = Number(req.userId);
     const friendUuid = req.query.friendUuid as string;
     const cursor =
       typeof req.query.cursor === "string"
         ? Number(req.query.cursor)
         : undefined;
     try {
-      const messages = await getMessages(Number(userId), friendUuid, cursor);
+      const messages = await getMessages(userId, friendUuid, cursor);
       return res.status(200).send(messages);
     } catch (err) {
       console.log(err);

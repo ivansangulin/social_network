@@ -11,6 +11,8 @@ import http from "http";
 import messagingRouter from "./controllers/MessagingController";
 import { createMessage } from "./services/MessagingService";
 import { findUserUuidById } from "./services/UserService";
+import { createPost } from "./services/PostService";
+import { getFriendsUuids } from "./services/FriendshipService";
 
 declare global {
   namespace Express {
@@ -40,12 +42,10 @@ app.use("/messaging", RequiresAuth, messagingRouter);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: env.CLIENT_URL,
     methods: ["GET", "POST"],
-    allowedHeaders: [
-      "Cookie",
-    ],
-    credentials: true
+    allowedHeaders: ["Cookie"],
+    credentials: true,
   },
 });
 
@@ -79,9 +79,31 @@ io.on("connection", async (socket: ISocket) => {
   };
   socket.on("message", messageListener);
 
+  const postListener = async (
+    text: string,
+    ack: (finished: boolean) => void
+  ) => {
+    try {
+      const post = await createPost(Number(socket.userId), text);
+      const friendsUuids = await getFriendsUuids(
+        Number(socket.userId),
+        userUuid
+      );
+      friendsUuids.forEach((uuid) => io.to(uuid).emit("newPost", post));
+      io.to(userUuid).emit("newPost", post);
+    } catch (err) {
+      console.log(err);
+      io.to(userUuid).emit("newPost", "Failed to create new post!");
+    } finally {
+      if (ack) ack(true);
+    }
+  };
+  socket.on("newPost", postListener);
+
   socket.on("disconnect", () => {
     console.log("Client disconnected" + " " + socket.userId);
     socket.off("message", messageListener);
+    socket.off("newPost", postListener);
     socket.leave(userUuid);
   });
 });

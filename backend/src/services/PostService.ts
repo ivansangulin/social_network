@@ -1,4 +1,32 @@
 import { PrismaClient } from "@prisma/client";
+import {
+  differenceInDays,
+  differenceInHours,
+  differenceInMinutes,
+  isYesterday,
+} from "date-fns";
+
+const calculateTime = (postDate: Date) => {
+  const now = new Date();
+
+  const diffHours = differenceInHours(now, postDate);
+  const diffMinutes = differenceInMinutes(now, postDate);
+  const diffDays = differenceInDays(now, postDate);
+
+  if (diffMinutes < 1) {
+    return "Just now";
+  } else if (diffMinutes < 60) {
+    return `${diffMinutes} minute${diffMinutes !== 1 ? "s" : ""} ago`;
+  } else if (diffHours < 24) {
+    return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
+  } else if (isYesterday(postDate)) {
+    return "Yesterday";
+  } else if (diffDays < 7) {
+    return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
+  } else {
+    return postDate.toLocaleDateString();
+  }
+};
 
 const prisma = new PrismaClient().$extends({
   result: {
@@ -6,7 +34,7 @@ const prisma = new PrismaClient().$extends({
       createdLocalDate: {
         needs: { created: true },
         compute(data) {
-          return data.created.toLocaleDateString();
+          return calculateTime(data.created);
         },
       },
     },

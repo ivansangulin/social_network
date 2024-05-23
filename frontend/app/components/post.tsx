@@ -25,9 +25,11 @@ export const Post = ({
               <img alt="" src="/images/default_profile_picture.png" />
             </div>
           )}
-          <div className="text-xl">{post.user.username}</div>
+          <div className="flex flex-col">
+            <div className="text-xl">{post.user.username}</div>
+            <div className="text-sm">{post.createdLocalDate}</div>
+          </div>
         </div>
-        <div className="italic text-sm">{post.createdLocalDate}</div>
       </div>
       <div>{post.text}</div>
       <div className="flex justify-between">

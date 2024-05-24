@@ -8,16 +8,34 @@ import {
   FormEvent,
   MouseEvent,
   KeyboardEvent,
+  forwardRef,
+  useImperativeHandle,
 } from "react";
-import { SocketContext } from "~/root";
+import { ServerUrlContext, SocketContext } from "~/root";
 import { Message, MessagesPaging } from "~/service/chat";
 import {
   ChevronDoubleUp,
   ChevronDoubleDown,
   XMarkIcon,
   PaperAirplaneIcon,
+  ExclamationTriangle,
 } from "./icons";
 import { FriendData } from "~/routes/_index";
+
+interface NewMessageHandle {
+  receiveMessage: (message: Message) => void;
+}
+
+type ChatProps = {
+  className: string;
+  friend: FriendData;
+  onDeleteChat: () => void;
+  inPopover?: boolean;
+  defaultOpen: boolean;
+  popoverOpen: boolean;
+  setFirst?: (uuid: string) => void;
+  closePopover: () => void;
+};
 
 export const Chats = ({
   friends,
@@ -28,12 +46,16 @@ export const Chats = ({
   onDeleteChat: (uuid: string) => void;
   setFirst: (uuid: string) => void;
 }) => {
+  const socket = useContext(SocketContext);
   const [shownChats, setShownChats] = useState<FriendData[]>([]);
   const [popoverChats, setPopoverChats] = useState<FriendData[]>([]);
   const [popoverOpen, setPopoverOpen] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const popoverTriggerRef = useRef<HTMLButtonElement>(null);
+  const chatRefs = useRef<{
+    [key: string]: NewMessageHandle | null;
+  }>({});
 
   const elementWidth = 288;
   const triggerWidth = 40;
@@ -73,6 +95,20 @@ export const Chats = ({
     }
   }, [closePopover, organizeChats]);
 
+  useEffect(() => {
+    if (socket) {
+      const handleNewMessage = (message: Message) => {
+        if (chatRefs.current[message.sender]) {
+          chatRefs.current[message.sender]?.receiveMessage(message);
+        }
+      };
+      socket.on("message", handleNewMessage);
+      return () => {
+        socket.off("message", handleNewMessage);
+      };
+    }
+  }, [socket]);
+
   return (
     <div
       className="absolute bottom-0 left-0 flex items-end px-2 w-full z-10"
@@ -87,6 +123,7 @@ export const Chats = ({
           popoverOpen={popoverOpen}
           defaultOpen={index === 0}
           closePopover={closePopover}
+          ref={(el) => (chatRefs.current[friend.uuid] = el)}
         />
       ))}
       {popoverChats.length > 0 && (
@@ -133,34 +170,19 @@ export const Chats = ({
   );
 };
 
-const Chat = ({
-  className,
-  friend,
-  onDeleteChat,
-  inPopover,
-  defaultOpen,
-  popoverOpen,
-  setFirst,
-  closePopover,
-}: {
-  className: string;
-  friend: FriendData;
-  onDeleteChat: () => void;
-  inPopover?: boolean;
-  defaultOpen: boolean;
-  popoverOpen: boolean;
-  setFirst?: (uuid: string) => void;
-  closePopover: () => void;
-}) => {
+const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
   const socket = useContext(SocketContext);
+  const serverUrl = useContext(ServerUrlContext);
   const maxRows = 5;
   const defaultRows = 1;
   const colsDefault = 24;
 
-  const [open, setOpen] = useState<boolean>(defaultOpen);
+  const [open, setOpen] = useState<boolean>(props.defaultOpen);
   const [rows, setRows] = useState<number>(defaultRows);
   const [textAreaValue, setTextAreaValue] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [notifications, setNotifications] = useState<number>(0);
+  const [textAreaFocused, setTextAreaFocused] = useState<boolean>(false);
 
   const messageFetcher = useFetcher();
 
@@ -170,29 +192,20 @@ const Chat = ({
   const messageRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (popoverOpen) {
-      setOpen(false);
-    }
-  }, [popoverOpen]);
+  useImperativeHandle(ref, () => ({
+    receiveMessage(message) {
+      setMessages((messages) => [message, ...messages]);
+      if (!textAreaFocused || !open) {
+        setNotifications((notifications) => notifications + 1);
+      }
+    },
+  }));
 
   useEffect(() => {
-    const handleNewMessage = (message: Message | string) => {
-      if (typeof message !== "string") {
-        setMessages((messages) => {
-          return [message, ...messages];
-        });
-        if (messageRef.current) {
-          messageRef.current.scrollIntoView({ behavior: "instant" });
-        }
-      }
-    };
-    messageFetcher.load(`/resource/get-messages?friendUuid=${friend.uuid}`);
-    socket?.on(friend.uuid, handleNewMessage);
-    return () => {
-      socket?.off(friend.uuid, handleNewMessage);
-    };
-  }, []);
+    if (props.popoverOpen) {
+      setOpen(false);
+    }
+  }, [props.popoverOpen]);
 
   useEffect(() => {
     const messageFetcherData = messageFetcher.data as MessagesPaging | null;
@@ -222,10 +235,13 @@ const Chat = ({
         }
         fetching.current = true;
         messageFetcher.load(
-          `/resource/get-messages?friendUuid=${friend.uuid}&cursor=${cursor.current}`
+          `/resource/get-messages?friendUuid=${props.friend.uuid}&cursor=${cursor.current}`
         );
       }
     };
+    messageFetcher.load(
+      `/resource/get-messages?friendUuid=${props.friend.uuid}`
+    );
     const messageRefCurrent = messageContainerRef.current;
     if (messageRefCurrent) {
       messageRefCurrent.addEventListener("scroll", handleScroll);
@@ -236,11 +252,11 @@ const Chat = ({
   }, []);
 
   const handleOpenClose = (e: MouseEvent<HTMLButtonElement>) => {
-    closePopover();
-    if (inPopover) {
+    props.closePopover();
+    if (props.inPopover) {
       e.stopPropagation();
-      if (setFirst) {
-        setFirst(friend.uuid);
+      if (props.setFirst) {
+        props.setFirst(props.friend.uuid);
         return;
       }
     }
@@ -264,14 +280,32 @@ const Chat = ({
   };
 
   const handleDelete = (e: MouseEvent<HTMLButtonElement>) => {
-    if (inPopover) e.stopPropagation();
-    onDeleteChat();
+    if (props.inPopover) e.stopPropagation();
+    props.onDeleteChat();
   };
 
   const sendMessage = () => {
-    socket?.emit("message", {
-      friendUuid: friend.uuid,
+    const tempKey = messages.length - 1;
+    setMessages((messages) => {
+      return [{ sender: `${tempKey}`, message: textAreaValue }, ...messages];
+    });
+    if (messageRef.current) {
+      messageRef.current.scrollIntoView({ behavior: "instant" });
+    }
+    const message = {
+      friendUuid: props.friend.uuid,
       message: textAreaValue,
+    };
+    socket?.emit("message", message, (success: boolean) => {
+      if (!success) {
+        setMessages((messages) => {
+          const errorMessageIdx = messages.findIndex(
+            (v) => Number(v.sender) === tempKey
+          );
+          if (errorMessageIdx !== -1) messages[errorMessageIdx].error = true;
+          return [...messages];
+        });
+      }
     });
     setTextAreaValue("");
     setRows(defaultRows);
@@ -280,11 +314,36 @@ const Chat = ({
   return (
     <div className="w-72 px-1">
       <div
-        className={`${className} flex items-center justify-between p-2 bg-primary text-white w-full`}
+        className={`${props.className} ${
+          notifications > 0 && !open && "animation-glow"
+        } flex items-center justify-between p-2 bg-primary text-white w-full`}
       >
-        <button className="truncate hover:underline" onClick={handleOpenClose}>
-          {friend.username}
-        </button>
+        <div className="flex items-center space-x-2">
+          {props.friend.profile_picture_uuid && serverUrl ? (
+            <div className="rounded-full overflow-hidden aspect-square max-w-[30px]">
+              <img
+                alt=""
+                src={`${serverUrl}/image/profile_picture/${props.friend.profile_picture_uuid}`}
+                className="object-cover min-h-full"
+              />
+            </div>
+          ) : (
+            <div className="overflow-hidden max-w-[30px]">
+              <img alt="" src="/images/default_profile_picture.png" />
+            </div>
+          )}
+          <button
+            className="truncate hover:underline"
+            onClick={handleOpenClose}
+          >
+            {props.friend.username}
+          </button>
+          {notifications > 0 && (
+            <div className="bg-red-600 text-sm text-white rounded-md px-2">
+              {notifications}
+            </div>
+          )}
+        </div>
         <button onClick={handleDelete}>
           <XMarkIcon />
         </button>
@@ -298,12 +357,17 @@ const Chat = ({
             <div ref={messageRef} />
             {messages.map((msg, index) => (
               <div
-                className={`max-w-[80%] bg-primary text-white rounded-md text-sm break-words p-2 ${
-                  msg.sender === friend.uuid ? "self-start" : "self-end"
+                className={`max-w-[80%] flex flex-col space-y-1 ${
+                  msg.sender === props.friend.uuid ? "self-start" : "self-end"
                 }`}
                 key={index}
               >
-                {msg.message}
+                <div className="bg-primary text-white rounded-md text-sm break-words p-2">
+                  {msg.message}
+                </div>
+                <div className="self-end">
+                  {!!msg.error && <ExclamationTriangle className="h-4 w-4" />}
+                </div>
               </div>
             ))}
           </div>
@@ -316,13 +380,18 @@ const Chat = ({
               onChange={handleTextAreaChange}
               value={textAreaValue}
               onKeyDown={handleKeyDown}
+              onFocus={() => {
+                setNotifications(0);
+                setTextAreaFocused(true);
+              }}
+              onBlur={() => setTextAreaFocused(false)}
             />
-            <button className="pl-2" onClick={sendMessage}>
-              <PaperAirplaneIcon className="hover:fill-primary h-6 w-6" />
+            <button className="ml-2 hover:*:fill-primary" onClick={sendMessage}>
+              <PaperAirplaneIcon className="h-6 w-6" />
             </button>
           </div>
         </div>
       )}
     </div>
   );
-};
+});

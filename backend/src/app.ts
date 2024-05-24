@@ -57,24 +57,27 @@ io.on("connection", async (socket: ISocket) => {
   const userUuid = await findUserUuidById(Number(socket.userId));
   socket.join(userUuid);
 
-  const messageListener = async ({
-    friendUuid,
-    message,
-  }: {
-    friendUuid: string;
-    message: string;
-  }) => {
+  const messageListener = async (
+    {
+      friendUuid,
+      message,
+    }: {
+      friendUuid: string;
+      message: string;
+    },
+    ack: (success: boolean) => void
+  ) => {
     try {
       const senderUuid = await createMessage(
         Number(socket.userId),
         friendUuid,
         message
       );
-      io.to(friendUuid).emit(userUuid, { sender: senderUuid, message });
-      io.to(userUuid).emit(friendUuid, { sender: senderUuid, message });
+      io.to(friendUuid).emit("message", { sender: senderUuid, message });
+      if (ack) ack(true);
     } catch (err) {
       console.log(err);
-      io.to(userUuid).emit(friendUuid, "Failed to store message");
+      if (ack) ack(false);
     }
   };
   socket.on("message", messageListener);

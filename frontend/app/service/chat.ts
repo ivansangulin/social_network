@@ -4,6 +4,7 @@ import { getCookie } from "./user";
 const messageSchema = z.object({
   sender: z.string(),
   message: z.string(),
+  error: z.boolean().optional(),
 });
 
 const messagesPagingSchema = z.object({

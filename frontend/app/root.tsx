@@ -41,6 +41,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 };
 
 export const SocketContext = createContext<Socket | null>(null);
+export const ServerUrlContext = createContext<string | null>(null);
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, backendURL } = useLoaderData<typeof loader>();
@@ -69,10 +70,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <SocketContext.Provider value={socket}>
-          <div className="min-h-screen w-full flex flex-col relative bg-indigo-50 bg-opacity-50">
-            <Navbar />
-            {children}
-          </div>
+          <ServerUrlContext.Provider value={backendURL!}>
+            <div className="min-h-screen w-full flex flex-col relative bg-indigo-50/50">
+              <Navbar />
+              {children}
+            </div>
+          </ServerUrlContext.Provider>
         </SocketContext.Provider>
         <ScrollRestoration />
         <Scripts />

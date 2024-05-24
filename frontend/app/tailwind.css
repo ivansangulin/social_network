@@ -17,3 +17,19 @@
 .transition-height {
   transition: height 0.4s ease;
 }
+
+.animation-glow {
+  animation: glow 1.5s infinite;
+}
+
+@keyframes glow {
+  0% {
+    background: rgba(160, 150, 230, 1);
+  }
+  50% {
+    background: rgb(124, 115, 230, 1);
+  }
+  100% {
+    background: rgba(160, 150, 230, 1);
+  }
+}

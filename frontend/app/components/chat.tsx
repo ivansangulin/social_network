@@ -20,7 +20,7 @@ import {
   PaperAirplaneIcon,
   ExclamationTriangle,
 } from "./icons";
-import { FriendData } from "~/routes/_index";
+import { ChatData, FriendData } from "~/routes/_index";
 
 interface NewMessageHandle {
   receiveMessage: (message: Message) => void;
@@ -35,20 +35,23 @@ type ChatProps = {
   popoverOpen: boolean;
   setFirst?: (uuid: string) => void;
   closePopover: () => void;
+  notification?: boolean;
 };
 
 export const Chats = ({
-  friends,
+  chats,
   onDeleteChat,
   setFirst,
+  onNewChat,
 }: {
-  friends: FriendData[];
+  chats: ChatData[];
   onDeleteChat: (uuid: string) => void;
   setFirst: (uuid: string) => void;
+  onNewChat: (friendData: FriendData) => void;
 }) => {
   const socket = useContext(SocketContext);
-  const [shownChats, setShownChats] = useState<FriendData[]>([]);
-  const [popoverChats, setPopoverChats] = useState<FriendData[]>([]);
+  const [shownChats, setShownChats] = useState<ChatData[]>([]);
+  const [popoverChats, setPopoverChats] = useState<ChatData[]>([]);
   const [popoverOpen, setPopoverOpen] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -66,16 +69,16 @@ export const Chats = ({
       const nrOfChatsToShow = Math.floor(
         (containerWidth - triggerWidth) / elementWidth
       );
-      if (nrOfChatsToShow > friends.length) {
-        setShownChats(friends);
+      if (nrOfChatsToShow > chats.length) {
+        setShownChats(chats);
         if (popoverChats.length > 0) setPopoverChats([]);
         setPopoverOpen(false);
       } else {
-        setShownChats(friends.slice(0, nrOfChatsToShow));
-        setPopoverChats(friends.slice(nrOfChatsToShow));
+        setShownChats(chats.slice(0, nrOfChatsToShow));
+        setPopoverChats(chats.slice(nrOfChatsToShow));
       }
     }
-  }, [friends, popoverChats.length]);
+  }, [chats, popoverChats.length]);
 
   const closePopover = useCallback(() => {
     if (popoverOpen) {
@@ -97,9 +100,12 @@ export const Chats = ({
 
   useEffect(() => {
     if (socket) {
-      const handleNewMessage = (message: Message) => {
+      const handleNewMessage = (message: Message, friendData: FriendData) => {
+        console.log(chatRefs.current[message.sender]);
         if (chatRefs.current[message.sender]) {
           chatRefs.current[message.sender]?.receiveMessage(message);
+        } else {
+          onNewChat(friendData);
         }
       };
       socket.on("message", handleNewMessage);
@@ -114,16 +120,17 @@ export const Chats = ({
       className="absolute bottom-0 left-0 flex items-end px-2 w-full z-10"
       ref={containerRef}
     >
-      {shownChats.map((friend, index) => (
+      {shownChats.map(({ friend, defaultOpen, notification }) => (
         <Chat
           key={friend.uuid}
           className=""
           friend={friend}
           onDeleteChat={() => onDeleteChat(friend.uuid)}
           popoverOpen={popoverOpen}
-          defaultOpen={index === 0}
+          defaultOpen={defaultOpen}
           closePopover={closePopover}
           ref={(el) => (chatRefs.current[friend.uuid] = el)}
+          notification={notification}
         />
       ))}
       {popoverChats.length > 0 && (
@@ -149,7 +156,7 @@ export const Chats = ({
                 left: `-${elementWidth - triggerWidth}px`,
               }}
             >
-              {popoverChats.map((friend) => (
+              {popoverChats.map(({ friend }) => (
                 <Chat
                   key={friend.uuid}
                   className="px-4"
@@ -181,7 +188,9 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
   const [rows, setRows] = useState<number>(defaultRows);
   const [textAreaValue, setTextAreaValue] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [notifications, setNotifications] = useState<number>(0);
+  const [notifications, setNotifications] = useState<number>(
+    props.notification ? 1 : 0
+  );
   const [textAreaFocused, setTextAreaFocused] = useState<boolean>(false);
 
   const messageFetcher = useFetcher();
@@ -340,7 +349,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
           </button>
           {notifications > 0 && (
             <div className="bg-red-600 text-sm text-white rounded-md px-2">
-              {notifications}
+              {notifications > 10 ? "10+" : notifications}
             </div>
           )}
         </div>

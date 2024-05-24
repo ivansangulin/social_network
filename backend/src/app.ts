@@ -68,12 +68,12 @@ io.on("connection", async (socket: ISocket) => {
     ack: (success: boolean) => void
   ) => {
     try {
-      const senderUuid = await createMessage(
+      const myData = await createMessage(
         Number(socket.userId),
         friendUuid,
         message
       );
-      io.to(friendUuid).emit("message", { sender: senderUuid, message });
+      io.to(friendUuid).emit("message", { sender: userUuid, message }, myData);
       if (ack) ack(true);
     } catch (err) {
       console.log(err);

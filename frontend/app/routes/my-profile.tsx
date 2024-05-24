@@ -23,7 +23,7 @@ export default () => {
     <div className="flex flex-col space-y-8 items-center">
       <div className="flex flex-col bg-white w-full max-h-80 items-center space-y-4 pt-8 fixed top-24 z-10">
         {user.profile_picture_uuid && backendUrl ? (
-          <div className="rounded-full overflow-hidden aspect-square max-w-[200px]">
+          <div className="rounded-full overflow-hidden aspect-square max-w-[150px]">
             <img
               alt=""
               src={`${backendUrl}/image/profile_picture/${user.profile_picture_uuid}`}
@@ -31,7 +31,7 @@ export default () => {
             />
           </div>
         ) : (
-          <div className="overflow-hidden max-w-[200px]">
+          <div className="overflow-hidden max-w-[150px]">
             <img alt="" src="/images/default_profile_picture.png" />
           </div>
         )}

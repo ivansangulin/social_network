@@ -1,22 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import { areFriends } from "./FriendshipService";
-import { findUserUuidById } from "./UserService";
+import {
+  findUserUuidById,
+  getFriendIdFromUuid,
+  myMessagingData,
+} from "./UserService";
 
 const prisma = new PrismaClient();
 
 const MESSAGES_PAGING_TAKE = 20;
-
-const getFriendIdFromUuid = async (friendUuid: string) => {
-  const { id: friendId } = await prisma.user.findUniqueOrThrow({
-    select: {
-      id: true,
-    },
-    where: {
-      uuid: friendUuid,
-    },
-  });
-  return friendId;
-};
 
 export const createMessage = async (
   userId: number,
@@ -41,9 +33,8 @@ export const createMessage = async (
     },
   });
 
-  const userUuid = await findUserUuidById(userId);
-
-  return userUuid;
+  const myData = await myMessagingData(userId);
+  return myData;
 };
 
 export const getMessages = async (

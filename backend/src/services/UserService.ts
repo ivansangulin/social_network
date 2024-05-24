@@ -70,3 +70,30 @@ export const findUserUuidById = async (id: number) => {
 
   return userUuid;
 };
+
+export const getFriendIdFromUuid = async (friendUuid: string) => {
+  const { id: friendId } = await prisma.user.findUniqueOrThrow({
+    select: {
+      id: true,
+    },
+    where: {
+      uuid: friendUuid,
+    },
+  });
+  return friendId;
+};
+
+export const myMessagingData = async (userId: number) => {
+  const data = await prisma.user.findFirstOrThrow({
+    select: {
+      uuid: true,
+      username: true,
+      profile_picture_uuid: true,
+    },
+    where: {
+      id: userId,
+    },
+  });
+
+  return data;
+};

@@ -38,31 +38,48 @@ export type FriendData = {
   profile_picture_uuid?: string | null | undefined;
 };
 
+export type ChatData = {
+  defaultOpen: boolean;
+  notification: boolean;
+  friend: FriendData;
+};
+
 export default function Index() {
   const { user, backendUrl } = useLoaderData<typeof loader>();
-  const [friends, setFriends] = useState<FriendData[]>([]);
+  const [chats, setChats] = useState<ChatData[]>([]);
   return (
     <div className="grow flex">
       <Friends
         onNewChat={(friend) => {
-          if (friends.find((f) => f.uuid === friend.uuid)) return;
-          setFriends((friends) => {
-            return [friend, ...friends];
+          if (chats.find((c) => c.friend.uuid === friend.uuid)) return;
+          setChats((chats) => {
+            return [
+              { defaultOpen: true, notification: false, friend },
+              ...chats,
+            ];
           });
         }}
       />
       <div className="basis-3/5 border-r border-slate-400 relative flex justify-center">
         <Posts />
         <Chats
-          friends={friends}
+          chats={chats}
           onDeleteChat={(uuid) => {
-            setFriends((friends) => {
-              return [...friends.filter((f) => f.uuid !== uuid)];
+            setChats((chats) => {
+              return [...chats.filter((c) => c.friend.uuid !== uuid)];
             });
           }}
           setFirst={(uuid) => {
-            const el = friends.find((f) => f.uuid === uuid)!;
-            setFriends([el, ...friends.filter((f) => f.uuid !== uuid)]);
+            const el = chats.find((c) => c.friend.uuid === uuid)!;
+            setChats([el, ...chats.filter((c) => c.friend.uuid !== uuid)]);
+          }}
+          onNewChat={(friend) => {
+            setChats((chats) => {
+              return [
+                { defaultOpen: false, notification: true, friend },
+                ...chats,
+              ];
+            });
           }}
         />
       </div>

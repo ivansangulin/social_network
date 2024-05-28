@@ -33,11 +33,11 @@ export const Post = ({
       </div>
       <div>{post.text}</div>
       <div className="flex justify-between">
-        <div className="flex space-x-2 items-center">
+        <div className="flex space-x-2 items-end">
           <ThumbsUpIcon classname="w-5 h-5 fill-primary" />
           <span>{post._count.likes}</span>
         </div>
-        <div className="flex space-x-2 items-center">
+        <div className="flex space-x-2 items-end">
           <span>{post._count.comments}</span>
           <CommentIcon className="w-5 h-5 fill-primary" />
         </div>

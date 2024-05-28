@@ -32,16 +32,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 };
 
-export type FriendData = {
-  uuid: string;
-  username: string;
-  profile_picture_uuid?: string | null | undefined;
-};
-
 export type ChatData = {
   defaultOpen: boolean;
   notification: boolean;
-  friend: FriendData;
+  friend: Friend;
 };
 
 export default function Index() {
@@ -125,11 +119,10 @@ const ProfileData = ({
   );
 };
 
-const Friends = ({
-  onNewChat,
-}: {
-  onNewChat: (friend: FriendData) => void;
-}) => {
+type UserActivity = { uuid: string; status: boolean };
+
+const Friends = ({ onNewChat }: { onNewChat: (friend: Friend) => void }) => {
+  const socket = useContext(SocketContext);
   const { friendsPaging, backendUrl } = useLoaderData<typeof loader>();
   const [cursor, setCursor] = useState<number>(friendsPaging?.cursor ?? 0);
   const [friends, setFriends] = useState<Friend[]>(
@@ -142,6 +135,25 @@ const Friends = ({
   );
   const [newSearch, setNewSearch] = useState<boolean>(false);
   const fetcher = useFetcher();
+
+  useEffect(() => {
+    if (socket) {
+      const handleUserActivity = (activity: UserActivity) => {
+        setFriends((friends) => {
+          const friend = friends.find((f) => f.uuid === activity.uuid);
+          if (friend) {
+            friend.user_status.is_online = activity.status;
+            friend.user_status.last_seen = "Just now";
+          }
+          return [...friends];
+        });
+      };
+      socket.on("userActivity", handleUserActivity);
+      return () => {
+        socket.off("userActivity", handleUserActivity);
+      };
+    }
+  }, [socket]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -218,28 +230,44 @@ const Friends = ({
         {friends ? (
           friends.length > 0 ? (
             <div className="flex flex-col gap-4 min-w-full">
-              {friends.map(({ friend }) => (
+              {friends.map((friend) => (
                 <button
                   key={friend.uuid}
-                  className="flex items-center space-x-2 rounded-md p-2 hover:bg-slate-100 text-left bg-white"
+                  className="flex items-center justify-between rounded-md p-2 hover:bg-slate-100 text-left bg-white"
                   onClick={() => {
                     onNewChat(friend);
                   }}
                 >
-                  {friend.profile_picture_uuid && backendUrl ? (
-                    <div className="rounded-full overflow-hidden aspect-square max-w-[40px]">
-                      <img
-                        alt=""
-                        src={`${backendUrl}/image/profile_picture/${friend.profile_picture_uuid}`}
-                        className="object-cover min-h-full"
-                      />
-                    </div>
-                  ) : (
-                    <div className="overflow-hidden max-w-[40px]">
-                      <img alt="" src="/images/default_profile_picture.png" />
-                    </div>
-                  )}
-                  <div className="text">{friend.username}</div>
+                  <div className="flex items-center space-x-2">
+                    {friend.profile_picture_uuid && backendUrl ? (
+                      <div className="rounded-full overflow-hidden aspect-square max-w-[40px]">
+                        <img
+                          alt=""
+                          src={`${backendUrl}/image/profile_picture/${friend.profile_picture_uuid}`}
+                          className="object-cover min-h-full"
+                        />
+                      </div>
+                    ) : (
+                      <div className="overflow-hidden max-w-[40px]">
+                        <img alt="" src="/images/default_profile_picture.png" />
+                      </div>
+                    )}
+                    <div className="text">{friend.username}</div>
+                  </div>
+                  <div className="flex items-center space-x-2 pr-2">
+                    {!friend.user_status.is_online && (
+                      <div className="text-neutral-400 pb-1">
+                        {friend.user_status.last_seen}
+                      </div>
+                    )}
+                    <div
+                      className={`w-[10px] h-[10px] rounded-full ${
+                        friend.user_status.is_online
+                          ? "bg-green-500"
+                          : "bg-neutral-400"
+                      }`}
+                    />
+                  </div>
                 </button>
               ))}
             </div>

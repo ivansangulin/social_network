@@ -1,6 +1,47 @@
 import { PrismaClient } from "@prisma/client";
+import {
+  differenceInDays,
+  differenceInHours,
+  differenceInMinutes,
+  differenceInMonths,
+  differenceInYears,
+} from "date-fns";
 
-const prisma = new PrismaClient();
+const calculateAwayTime = (last_active: Date) => {
+  const now = new Date();
+  const diffYears = differenceInYears(now, last_active);
+  const diffMonths = differenceInMonths(now, last_active);
+  const diffDays = differenceInDays(now, last_active);
+  const diffHours = differenceInHours(now, last_active);
+  const diffMinutes = differenceInMinutes(now, last_active);
+
+  if (diffMinutes < 1) {
+    return "Just now";
+  } else if (diffMinutes < 60) {
+    return `${diffMinutes}min`;
+  } else if (diffHours < 24) {
+    return `${diffHours}h`;
+  } else if (diffDays < 31) {
+    return `${diffDays}d`;
+  } else if (diffMonths < 12) {
+    return `${diffMonths}mth`;
+  } else {
+    return `${diffYears}y`;
+  }
+};
+
+const prisma = new PrismaClient().$extends({
+  result: {
+    userStatus: {
+      last_seen: {
+        needs: { last_active: true },
+        compute(data) {
+          return calculateAwayTime(data.last_active);
+        },
+      },
+    },
+  },
+});
 
 const FRIENDS_PAGING_TAKE = 20;
 
@@ -57,6 +98,12 @@ export const getFriends = async (
             uuid: true,
             profile_picture_uuid: true,
             id: true,
+            user_status: {
+              select: {
+                is_online: true,
+                last_seen: true,
+              },
+            },
           },
         },
         user: {
@@ -65,6 +112,12 @@ export const getFriends = async (
             uuid: true,
             profile_picture_uuid: true,
             id: true,
+            user_status: {
+              select: {
+                is_online: true,
+                last_seen: true,
+              },
+            },
           },
         },
         id: true,
@@ -109,12 +162,9 @@ export const getFriends = async (
   const friendsFiltered = friends.map((v) => {
     if (v.friend.id === userId) {
       v.friend = v.user;
-      const { user, ...props } = v;
-      return props;
-    } else {
-      const { user, ...props } = v;
-      return props;
     }
+    const { ...props } = v.friend;
+    return props;
   });
 
   const friendsPaging = {
@@ -147,25 +197,42 @@ export const areFriends = async (userId: number, friendId: number) => {
   }
 };
 
-export const getFriendsUuids = async (userId: number, userUuid: string) => {
+export const getActiveFriendsUuids = async (userId: number) => {
   const friendshipUuids = await prisma.friendship.findMany({
     select: {
       friend: {
         select: {
           uuid: true,
+          id: true,
         },
       },
       user: {
         select: {
           uuid: true,
+          id: true,
         },
       },
     },
-    where: { OR: [{ user_id: userId }, { friend_id: userId }] },
+    where: {
+      OR: [
+        {
+          AND: [
+            { user_id: userId },
+            { friend: { user_status: { is_online: true } } },
+          ],
+        },
+        {
+          AND: [
+            { friend_id: userId },
+            { user: { user_status: { is_online: true } } },
+          ],
+        },
+      ],
+    },
   });
 
   const friendsUuids = friendshipUuids.map((f) =>
-    f.user.uuid === userUuid ? f.friend.uuid : f.user.uuid
+    f.user.id === userId ? f.friend.uuid : f.user.uuid
   );
 
   return friendsUuids;

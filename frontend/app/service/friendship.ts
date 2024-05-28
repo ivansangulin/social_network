@@ -2,10 +2,12 @@ import { z } from "zod";
 import { getCookie } from "./user";
 
 const friendSchema = z.object({
-  friend: z.object({
-    username: z.string(),
-    uuid: z.string(),
-    profile_picture_uuid: z.string().nullish(),
+  username: z.string(),
+  uuid: z.string(),
+  profile_picture_uuid: z.string().nullish(),
+  user_status: z.object({
+    is_online: z.boolean(),
+    last_seen: z.string(),
   }),
 });
 export const friendsPagingSchema = z.object({

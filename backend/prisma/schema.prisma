@@ -18,6 +18,7 @@ model User {
   friendshipToFriend   Friendship[] @relation("friendRelation")
   friendshipToUser     Friendship[] @relation("userRelation")
   posts                Post[]
+  user_status           UserStatus?
 
   @@map("users")
 }
@@ -83,4 +84,13 @@ model Message {
   message      String   @db.VarChar()
 
   @@map("messages")
+}
+
+model UserStatus {
+  user_id     Int      @unique
+  user        User     @relation(fields: [user_id], references: [id])
+  is_online   Boolean  @default(false) @db.Boolean()
+  last_active DateTime @default(now()) @db.Timestamptz()
+
+  @@map("user_status")
 }

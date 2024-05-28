@@ -107,7 +107,7 @@ export default () => {
       {friends ? (
         friends.length > 0 ? (
           <div className="grid grid-cols-3 gap-4 max-h-[100%] min-w-full">
-            {friends.map(({ friend }) => (
+            {friends.map((friend) => (
               <div
                 key={friend.uuid}
                 className="flex items-center space-x-4 border-2 border-slate-300 rounded-md col-span-1 p-2"

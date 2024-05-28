@@ -10,9 +10,8 @@ import { Server, Socket } from "socket.io";
 import http from "http";
 import messagingRouter from "./controllers/MessagingController";
 import { createMessage } from "./services/MessagingService";
-import { findUserUuidById } from "./services/UserService";
+import { findUserUuidById, updateStatus } from "./services/UserService";
 import { createPost } from "./services/PostService";
-import { getFriendsUuids } from "./services/FriendshipService";
 
 declare global {
   namespace Express {
@@ -52,9 +51,13 @@ const io = new Server(server, {
 io.use(SocketAuth);
 
 io.on("connection", async (socket: ISocket) => {
+  const userId = Number(socket.userId);
   console.log("New client connected");
-  console.log(socket.userId);
-  const userUuid = await findUserUuidById(Number(socket.userId));
+  console.log(userId);
+  const [userUuid] = await Promise.all([
+    findUserUuidById(userId),
+    updateStatus(userId, true),
+  ]);
   socket.join(userUuid);
 
   const messageListener = async (
@@ -68,11 +71,7 @@ io.on("connection", async (socket: ISocket) => {
     ack: (success: boolean) => void
   ) => {
     try {
-      const myData = await createMessage(
-        Number(socket.userId),
-        friendUuid,
-        message
-      );
+      const myData = await createMessage(userId, friendUuid, message);
       io.to(friendUuid).emit("message", { sender: userUuid, message }, myData);
       if (ack) ack(true);
     } catch (err) {
@@ -87,12 +86,7 @@ io.on("connection", async (socket: ISocket) => {
     ack: (finished: boolean) => void
   ) => {
     try {
-      const post = await createPost(Number(socket.userId), text);
-      const friendsUuids = await getFriendsUuids(
-        Number(socket.userId),
-        userUuid
-      );
-      friendsUuids.forEach((uuid) => io.to(uuid).emit("newPost", post));
+      const post = await createPost(userId, text);
       io.to(userUuid).emit("newPost", post);
     } catch (err) {
       console.log(err);
@@ -103,8 +97,9 @@ io.on("connection", async (socket: ISocket) => {
   };
   socket.on("newPost", postListener);
 
-  socket.on("disconnect", () => {
-    console.log("Client disconnected" + " " + socket.userId);
+  socket.on("disconnect", async () => {
+    await updateStatus(userId, false);
+    console.log("Client disconnected" + " " + userId);
     socket.off("message", messageListener);
     socket.off("newPost", postListener);
     socket.leave(userUuid);

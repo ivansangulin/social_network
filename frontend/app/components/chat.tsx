@@ -20,7 +20,8 @@ import {
   PaperAirplaneIcon,
   ExclamationTriangle,
 } from "./icons";
-import { ChatData, FriendData } from "~/routes/_index";
+import { ChatData } from "~/routes/_index";
+import { Friend } from "~/service/friendship";
 
 interface NewMessageHandle {
   receiveMessage: (message: Message) => void;
@@ -28,7 +29,7 @@ interface NewMessageHandle {
 
 type ChatProps = {
   className: string;
-  friend: FriendData;
+  friend: Friend;
   onDeleteChat: () => void;
   inPopover?: boolean;
   defaultOpen: boolean;
@@ -47,7 +48,7 @@ export const Chats = ({
   chats: ChatData[];
   onDeleteChat: (uuid: string) => void;
   setFirst: (uuid: string) => void;
-  onNewChat: (friendData: FriendData) => void;
+  onNewChat: (friendData: Friend) => void;
 }) => {
   const socket = useContext(SocketContext);
   const [shownChats, setShownChats] = useState<ChatData[]>([]);
@@ -100,8 +101,7 @@ export const Chats = ({
 
   useEffect(() => {
     if (socket) {
-      const handleNewMessage = (message: Message, friendData: FriendData) => {
-        console.log(chatRefs.current[message.sender]);
+      const handleNewMessage = (message: Message, friendData: Friend) => {
         if (chatRefs.current[message.sender]) {
           chatRefs.current[message.sender]?.receiveMessage(message);
         } else {
@@ -327,7 +327,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
           notifications > 0 && !open && "animation-glow"
         } flex items-center justify-between p-2 bg-primary text-white w-full`}
       >
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 overflow-hidden">
           {props.friend.profile_picture_uuid && serverUrl ? (
             <div className="rounded-full overflow-hidden aspect-square max-w-[30px]">
               <img

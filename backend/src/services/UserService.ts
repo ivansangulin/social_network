@@ -89,6 +89,12 @@ export const myMessagingData = async (userId: number) => {
       uuid: true,
       username: true,
       profile_picture_uuid: true,
+      user_status: {
+        select: {
+          is_online: true,
+          last_active: true,
+        },
+      },
     },
     where: {
       id: userId,
@@ -96,4 +102,15 @@ export const myMessagingData = async (userId: number) => {
   });
 
   return data;
+};
+
+export const updateStatus = async (userId: number, status: boolean) => {
+  await prisma.userStatus.update({
+    data: {
+      is_online: status,
+    },
+    where: {
+      user_id: userId,
+    },
+  });
 };

@@ -25,6 +25,7 @@ import { Friend } from "~/service/friendship";
 
 interface NewMessageHandle {
   receiveMessage: (message: Message) => void;
+  isTyping: (typing: boolean) => void;
 }
 
 type ChatProps = {
@@ -102,15 +103,29 @@ export const Chats = ({
   useEffect(() => {
     if (socket) {
       const handleNewMessage = (message: Message, friendData: Friend) => {
-        if (chatRefs.current[message.sender]) {
-          chatRefs.current[message.sender]?.receiveMessage(message);
+        const sender = message.sender;
+        if (chatRefs.current[sender]) {
+          chatRefs.current[sender].receiveMessage(message);
         } else {
           onNewChat(friendData);
         }
       };
       socket.on("message", handleNewMessage);
+      const handleFriendTyping = ({
+        friendUuid,
+        typing,
+      }: {
+        friendUuid: string;
+        typing: boolean;
+      }) => {
+        if (chatRefs.current[friendUuid]) {
+          chatRefs.current[friendUuid].isTyping(typing);
+        }
+      };
+      socket.on("userTyping", handleFriendTyping);
       return () => {
         socket.off("message", handleNewMessage);
+        socket.off("userTyping", handleFriendTyping);
       };
     }
   }, [socket]);
@@ -192,6 +207,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
     props.notification ? 1 : 0
   );
   const [textAreaFocused, setTextAreaFocused] = useState<boolean>(false);
+  const [isFriendTyping, setIsFriendTyping] = useState<boolean>(false);
 
   const messageFetcher = useFetcher();
 
@@ -200,13 +216,18 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
   const fetching = useRef<boolean>(false);
   const messageRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useImperativeHandle(ref, () => ({
     receiveMessage(message) {
       setMessages((messages) => [message, ...messages]);
+      setIsFriendTyping(false);
       if (!textAreaFocused || !open) {
         setNotifications((notifications) => notifications + 1);
       }
+    },
+    isTyping(typing: boolean) {
+      setIsFriendTyping(typing);
     },
   }));
 
@@ -278,6 +299,19 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
       const element = e.target as HTMLTextAreaElement;
       const newRows = Math.max(Math.ceil(element.textLength / colsDefault), 1);
       if (newRows <= maxRows && newRows !== rows) setRows(newRows);
+    }
+    if (socket) {
+      socket.emit("userTyping", {
+        friendUuid: props.friend.uuid,
+        typing: true,
+      });
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit("userTyping", {
+          friendUuid: props.friend.uuid,
+          typing: false,
+        });
+      }, 2000);
     }
   };
 
@@ -364,6 +398,18 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
             ref={messageContainerRef}
           >
             <div ref={messageRef} />
+            {isFriendTyping && (
+              <div className="flex space-x-1 font-bold self-start bg-neutral-200 rounded-md p-2">
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className={`dot dot-${
+                      i + 1
+                    } relative w-[5px] h-[5px] rounded-full bg-black`}
+                  />
+                ))}
+              </div>
+            )}
             {messages.map((msg, index) => (
               <div
                 className={`max-w-[80%] flex flex-col space-y-1 ${

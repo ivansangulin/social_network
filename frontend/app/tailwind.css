@@ -33,3 +33,34 @@
     background: rgba(160, 150, 230, 1);
   }
 }
+
+.dot {
+  animation: jump 1s infinite;
+}
+
+.dot-1 {
+  -webkit-animation-delay: 100ms;
+  animation-delay: 100ms;
+}
+
+.dot-2 {
+  -webkit-animation-delay: 200ms;
+  animation-delay: 200ms;
+}
+
+.dot-3 {
+  -webkit-animation-delay: 300ms;
+  animation-delay: 300ms;
+}
+
+@keyframes jump {
+  0% {
+    bottom: 0px;
+  }
+  20% {
+    bottom: 4px;
+  }
+  40% {
+    bottom: 0px;
+  }
+}

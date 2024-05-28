@@ -97,11 +97,26 @@ io.on("connection", async (socket: ISocket) => {
   };
   socket.on("newPost", postListener);
 
+  const typingListener = async ({
+    friendUuid,
+    typing,
+  }: {
+    friendUuid: string;
+    typing: boolean;
+  }) => {
+    io.to(friendUuid).emit("userTyping", {
+      friendUuid: userUuid,
+      typing: typing,
+    });
+  };
+  socket.on("userTyping", typingListener);
+
   socket.on("disconnect", async () => {
     await updateStatus(userId, false);
     console.log("Client disconnected" + " " + userId);
     socket.off("message", messageListener);
     socket.off("newPost", postListener);
+    socket.off("userTyping", typingListener);
     socket.leave(userUuid);
   });
 });

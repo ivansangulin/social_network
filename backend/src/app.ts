@@ -64,15 +64,34 @@ io.on("connection", async (socket: ISocket) => {
     {
       friendUuid,
       message,
+      created,
     }: {
       friendUuid: string;
       message: string;
+      created: string;
     },
     ack: (success: boolean) => void
   ) => {
     try {
-      const myData = await createMessage(userId, friendUuid, message);
-      io.to(friendUuid).emit("message", { sender: userUuid, message }, myData);
+      const createdDate = new Date(created);
+      const myData = await createMessage(
+        userId,
+        friendUuid,
+        message,
+        createdDate
+      );
+      io.to(friendUuid).emit(
+        "message",
+        {
+          sender: userUuid,
+          message,
+          time: createdDate.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+        myData
+      );
       if (ack) ack(true);
     } catch (err) {
       console.log(err);

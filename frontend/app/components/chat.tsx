@@ -300,7 +300,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
       const newRows = Math.max(Math.ceil(element.textLength / colsDefault), 1);
       if (newRows <= maxRows && newRows !== rows) setRows(newRows);
     }
-    if (socket) {
+    if (socket && textAreaValue < e.currentTarget.value) {
       socket.emit("userTyping", {
         friendUuid: props.friend.uuid,
         typing: true,
@@ -330,7 +330,19 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
   const sendMessage = () => {
     const tempKey = messages.length - 1;
     setMessages((messages) => {
-      return [{ sender: `${tempKey}`, message: textAreaValue }, ...messages];
+      return [
+        {
+          sender: `${tempKey}`,
+          message: textAreaValue,
+          time: new Date()
+            .toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+            .replace(/AM|PM/, ""),
+        },
+        ...messages,
+      ];
     });
     if (messageRef.current) {
       messageRef.current.scrollIntoView({ behavior: "instant" });
@@ -338,6 +350,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
     const message = {
       friendUuid: props.friend.uuid,
       message: textAreaValue,
+      created: new Date(),
     };
     socket?.emit("message", message, (success: boolean) => {
       if (!success) {
@@ -412,15 +425,16 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
             )}
             {messages.map((msg, index) => (
               <div
-                className={`max-w-[80%] flex flex-col space-y-1 ${
+                className={`max-w-[80%] flex items-center space-x-2 bg-primary rounded-md p-2 ${
                   msg.sender === props.friend.uuid ? "self-start" : "self-end"
                 }`}
                 key={index}
               >
-                <div className="bg-primary text-white rounded-md text-sm break-words p-2">
+                <div className="text-white text-sm break-words overflow-hidden">
                   {msg.message}
                 </div>
-                <div className="self-end">
+                <div className="flex self-end mt-2 *:stroke-white">
+                  <div className="text-white text-xs">{msg.time}</div>
                   {!!msg.error && <ExclamationTriangle className="h-4 w-4" />}
                 </div>
               </div>

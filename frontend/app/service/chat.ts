@@ -5,6 +5,7 @@ const messageSchema = z.object({
   sender: z.string(),
   message: z.string(),
   error: z.boolean().optional(),
+  time: z.string(),
 });
 
 const messagesPagingSchema = z.object({

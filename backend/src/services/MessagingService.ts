@@ -13,7 +13,8 @@ const MESSAGES_PAGING_TAKE = 20;
 export const createMessage = async (
   userId: number,
   friendUuid: string,
-  message: string
+  message: string,
+  created: Date
 ) => {
   const friendId = await getFriendIdFromUuid(friendUuid);
 
@@ -30,6 +31,7 @@ export const createMessage = async (
       from_user_id: userId,
       to_user_id: friendId,
       message: message,
+      created: created,
     },
   });
 
@@ -81,14 +83,27 @@ export const getMessages = async (
 
   const userUuid = await findUserUuidById(userId);
 
-  const messagesMapped: { sender: string; message: string }[] = messages.map(
-    (msg) => {
+  const messagesMapped: { sender: string; message: string; time: string }[] =
+    messages.map((msg) => {
       if (msg.from_user_id === userId) {
-        return { sender: userUuid, message: msg.message };
+        return {
+          sender: userUuid,
+          message: msg.message,
+          time: msg.created.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        };
       }
-      return { sender: friendUuid, message: msg.message };
-    }
-  );
+      return {
+        sender: friendUuid,
+        message: msg.message,
+        time: msg.created.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+    });
 
   const messagesPaging = {
     count,

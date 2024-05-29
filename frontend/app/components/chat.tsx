@@ -26,6 +26,7 @@ import { Friend } from "~/service/friendship";
 interface NewMessageHandle {
   receiveMessage: (message: Message) => void;
   isTyping: (typing: boolean) => void;
+  readMessages: () => void;
 }
 
 type ChatProps = {
@@ -111,6 +112,7 @@ export const Chats = ({
         }
       };
       socket.on("message", handleNewMessage);
+
       const handleFriendTyping = ({
         friendUuid,
         typing,
@@ -123,9 +125,17 @@ export const Chats = ({
         }
       };
       socket.on("userTyping", handleFriendTyping);
+
+      const handleReadMessages = ({ friendUuid }: { friendUuid: string }) => {
+        if (chatRefs.current[friendUuid]) {
+          chatRefs.current[friendUuid].readMessages();
+        }
+      };
+      socket.on("readMessages", handleReadMessages);
       return () => {
         socket.off("message", handleNewMessage);
         socket.off("userTyping", handleFriendTyping);
+        socket.off("readMessages", handleReadMessages);
       };
     }
   }, [socket]);
@@ -208,6 +218,9 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
   );
   const [textAreaFocused, setTextAreaFocused] = useState<boolean>(false);
   const [isFriendTyping, setIsFriendTyping] = useState<boolean>(false);
+  const [lastMessageSeenTime, setLastMessageSeenTime] = useState<string | null>(
+    null
+  );
 
   const messageFetcher = useFetcher();
 
@@ -217,6 +230,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
   const messageRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const typingContainerRef = useRef<HTMLDivElement>(null);
 
   useImperativeHandle(ref, () => ({
     receiveMessage(message) {
@@ -224,10 +238,29 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
       setIsFriendTyping(false);
       if (!textAreaFocused || !open) {
         setNotifications((notifications) => notifications + 1);
+        setLastMessageSeenTime(null);
+      } else if (
+        textAreaFocused &&
+        open &&
+        socket &&
+        messageContainerRef.current?.scrollTop === 0
+      ) {
+        socket.emit("readMessages", { friendUuid: props.friend.uuid });
       }
     },
     isTyping(typing: boolean) {
-      setIsFriendTyping(typing);
+      const animationDuration = 200;
+      if (!typing && typingContainerRef.current) {
+        typingContainerRef.current.classList.add("slow-hide");
+        setTimeout(() => {
+          setIsFriendTyping(typing);
+        }, animationDuration);
+      } else {
+        setIsFriendTyping(typing);
+      }
+    },
+    readMessages() {
+      setLastMessageSeenTime("Seen just now");
     },
   }));
 
@@ -247,6 +280,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
       setMessages((messages) => {
         return [...messages, ...messageFetcherData.messages];
       });
+      setLastMessageSeenTime(messageFetcherData.lastMessageReadTime);
     }
     fetching.current = false;
   }, [messageFetcher.data]);
@@ -363,8 +397,20 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
         });
       }
     });
+    setLastMessageSeenTime(null);
     setTextAreaValue("");
     setRows(defaultRows);
+  };
+
+  const onTextAreaFocus = () => {
+    if (notifications > 0 && messageContainerRef.current?.scrollTop === 0) {
+      socket?.emit("readMessages", {
+        friendUuid: props.friend.uuid,
+        readAt: new Date(),
+      });
+      setNotifications(0);
+    }
+    setTextAreaFocused(true);
   };
 
   return (
@@ -412,7 +458,10 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
           >
             <div ref={messageRef} />
             {isFriendTyping && (
-              <div className="flex space-x-1 font-bold self-start bg-neutral-200 rounded-md p-2">
+              <div
+                className="slow-show self-start bg-neutral-200 rounded-md p-2 flex space-x-1 font-bold"
+                ref={typingContainerRef}
+              >
                 {[...Array(3)].map((_, i) => (
                   <div
                     key={i}
@@ -423,10 +472,15 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
                 ))}
               </div>
             )}
+            {lastMessageSeenTime && (
+              <div className="self-end text-xs">{lastMessageSeenTime}</div>
+            )}
             {messages.map((msg, index) => (
               <div
-                className={`max-w-[80%] flex items-center space-x-2 bg-primary rounded-md p-2 ${
-                  msg.sender === props.friend.uuid ? "self-start" : "self-end"
+                className={`max-w-[80%] flex items-center space-x-2 rounded-md p-2 ${
+                  msg.sender === props.friend.uuid
+                    ? "self-start bg-zinc-600"
+                    : "self-end bg-primary"
                 }`}
                 key={index}
               >
@@ -449,10 +503,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
               onChange={handleTextAreaChange}
               value={textAreaValue}
               onKeyDown={handleKeyDown}
-              onFocus={() => {
-                setNotifications(0);
-                setTextAreaFocused(true);
-              }}
+              onFocus={onTextAreaFocus}
               onBlur={() => setTextAreaFocused(false)}
             />
             <button className="ml-2 hover:*:fill-primary" onClick={sendMessage}>

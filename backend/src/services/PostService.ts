@@ -5,8 +5,9 @@ import {
   differenceInMinutes,
   isYesterday,
 } from "date-fns";
+import { prisma } from "../utils/client";
 
-const calculateTime = (postDate: Date) => {
+export const calculateTime = (postDate: Date) => {
   const now = new Date();
 
   const diffHours = differenceInHours(now, postDate);
@@ -27,19 +28,6 @@ const calculateTime = (postDate: Date) => {
     return postDate.toLocaleDateString();
   }
 };
-
-const prisma = new PrismaClient().$extends({
-  result: {
-    post: {
-      createdLocalDate: {
-        needs: { created: true },
-        compute(data) {
-          return calculateTime(data.created);
-        },
-      },
-    },
-  },
-});
 
 const POST_PAGING_TAKE = 8;
 

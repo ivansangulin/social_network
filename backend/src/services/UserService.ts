@@ -2,9 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { UserRegistrationType } from "../controllers/AuthController";
 import bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
+import { prisma } from "../utils/client";
 
 const saltRounds = 5;
-const prisma = new PrismaClient();
 
 export const registerUser = async (userDto: UserRegistrationType) => {
   const hashedPassword: string = bcrypt.hashSync(userDto.password, saltRounds);

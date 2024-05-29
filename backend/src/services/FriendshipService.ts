@@ -6,8 +6,9 @@ import {
   differenceInMonths,
   differenceInYears,
 } from "date-fns";
+import { prisma } from "../utils/client";
 
-const calculateAwayTime = (last_active: Date) => {
+export const calculateAwayTime = (last_active: Date) => {
   const now = new Date();
   const diffYears = differenceInYears(now, last_active);
   const diffMonths = differenceInMonths(now, last_active);
@@ -29,19 +30,6 @@ const calculateAwayTime = (last_active: Date) => {
     return `${diffYears}y`;
   }
 };
-
-const prisma = new PrismaClient().$extends({
-  result: {
-    userStatus: {
-      last_seen: {
-        needs: { last_active: true },
-        compute(data) {
-          return calculateAwayTime(data.last_active);
-        },
-      },
-    },
-  },
-});
 
 const FRIENDS_PAGING_TAKE = 20;
 

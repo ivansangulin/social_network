@@ -11,6 +11,7 @@ const messageSchema = z.object({
 const messagesPagingSchema = z.object({
   count: z.number(),
   cursor: z.number(),
+  lastMessageReadTime: z.string().nullable(),
   messages: z.array(messageSchema),
 });
 

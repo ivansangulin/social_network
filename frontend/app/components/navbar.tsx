@@ -1,17 +1,21 @@
 import { Link } from "@remix-run/react";
+import { useUserData } from "~/hooks/useUserData";
 
 export const Navbar = () => {
+  const user = useUserData();
   return (
     <div className="flex flex-row bg-primary min-h-24 justify-between items-center drop-shadow-2xl sticky top-0 z-10">
       <Link className="text-white text-4xl py-4 px-12" to={"/"}>
         App name
       </Link>
-      <Link
-        to={"/login"}
-        className="text-white text-3xl py-4 pr-24 hover:underline"
-      >
-        Log out
-      </Link>
+      {!!user && (
+        <Link
+          to={"/login"}
+          className="text-white text-3xl py-4 pr-24 hover:underline"
+        >
+          Log out
+        </Link>
+      )}
     </div>
   );
 };

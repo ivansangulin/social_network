@@ -64,3 +64,29 @@
     bottom: 0px;
   }
 }
+
+@keyframes slideIn {
+  0% {
+    transform: translateY(30px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes slideOut {
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(50px);
+  }
+}
+
+.slow-show {
+  animation: slideIn 0.2s normal forwards;
+}
+
+.slow-hide {
+  animation: slideOut 0.2s normal forwards;
+}

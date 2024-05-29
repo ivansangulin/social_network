@@ -9,7 +9,7 @@ import postRouter from "./controllers/PostController";
 import { Server, Socket } from "socket.io";
 import http from "http";
 import messagingRouter from "./controllers/MessagingController";
-import { createMessage } from "./services/MessagingService";
+import { createMessage, readMessages } from "./services/MessagingService";
 import { findUserUuidById, updateStatus } from "./services/UserService";
 import { createPost } from "./services/PostService";
 
@@ -130,12 +130,29 @@ io.on("connection", async (socket: ISocket) => {
   };
   socket.on("userTyping", typingListener);
 
+  const readMessagesListener = async ({
+    friendUuid,
+    readAt,
+  }: {
+    friendUuid: string;
+    readAt: string;
+  }) => {
+    try {
+      await readMessages(userId, friendUuid, new Date(readAt));
+      io.to(friendUuid).emit("readMessages", { friendUuid: userUuid });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  socket.on("readMessages", readMessagesListener);
+
   socket.on("disconnect", async () => {
     await updateStatus(userId, false);
     console.log("Client disconnected" + " " + userId);
     socket.off("message", messageListener);
     socket.off("newPost", postListener);
     socket.off("userTyping", typingListener);
+    socket.off("readMessages", readMessagesListener);
     socket.leave(userUuid);
   });
 });

@@ -227,15 +227,22 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
   const cursor = useRef<number>();
   const hasMore = useRef<boolean>(true);
   const fetching = useRef<boolean>(false);
-  const messageRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const typingContainerRef = useRef<HTMLDivElement>(null);
 
   useImperativeHandle(ref, () => ({
     receiveMessage(message) {
-      setMessages((messages) => [message, ...messages]);
-      setIsFriendTyping(false);
+      if (isFriendTyping) {
+        const animationDuration = 200;
+        this.isTyping(false);
+        setTimeout(() => {
+          setMessages((messages) => [message, ...messages]);
+        }, animationDuration);
+      } else {
+        setMessages((messages) => [message, ...messages]);
+        setIsFriendTyping(false);
+      }
       if (!textAreaFocused || !open) {
         setNotifications((notifications) => notifications + 1);
         setLastMessageSeenTime(null);
@@ -251,7 +258,10 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
     isTyping(typing: boolean) {
       const animationDuration = 200;
       if (!typing && typingContainerRef.current) {
-        typingContainerRef.current.classList.add("slow-hide");
+        typingContainerRef.current.classList.add("slow-shrink");
+        typingContainerRef.current.firstElementChild?.classList.add(
+          "slide-out"
+        );
         setTimeout(() => {
           setIsFriendTyping(typing);
         }, animationDuration);
@@ -328,6 +338,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
   };
 
   const handleTextAreaChange = (e: FormEvent<HTMLTextAreaElement>) => {
+    const typingTimeout = 4000;
     setTextAreaValue(e.currentTarget.value);
     if (rows <= maxRows) {
       const element = e.target as HTMLTextAreaElement;
@@ -335,17 +346,17 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
       if (newRows <= maxRows && newRows !== rows) setRows(newRows);
     }
     if (socket && textAreaValue < e.currentTarget.value) {
+      clearTimeout(typingTimeoutRef.current);
       socket.emit("userTyping", {
         friendUuid: props.friend.uuid,
         typing: true,
       });
-      clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
         socket.emit("userTyping", {
           friendUuid: props.friend.uuid,
           typing: false,
         });
-      }, 2000);
+      }, typingTimeout);
     }
   };
 
@@ -378,8 +389,8 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
         ...messages,
       ];
     });
-    if (messageRef.current) {
-      messageRef.current.scrollIntoView({ behavior: "instant" });
+    if (typingContainerRef.current) {
+      typingContainerRef.current.scrollIntoView({ behavior: "instant" });
     }
     const message = {
       friendUuid: props.friend.uuid,
@@ -400,6 +411,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
     setLastMessageSeenTime(null);
     setTextAreaValue("");
     setRows(defaultRows);
+    clearTimeout(typingTimeoutRef.current);
   };
 
   const onTextAreaFocus = () => {
@@ -453,25 +465,28 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
       {open && (
         <div className="border-x border-black bg-white">
           <div
-            className="h-72 flex flex-col-reverse space-y-2 p-4 overflow-y-auto scrollbar-thin"
+            className="h-72 flex flex-col-reverse space-y-2 px-4 py-2 overflow-y-auto scrollbar-thin"
             ref={messageContainerRef}
           >
-            <div ref={messageRef} />
-            {isFriendTyping && (
+            <div
+              className={`${
+                isFriendTyping && "slow-grow"
+              } self-start relative mt-2`}
+              ref={typingContainerRef}
+            >
               <div
-                className="slow-show self-start bg-neutral-200 rounded-md p-2 flex space-x-1 font-bold"
-                ref={typingContainerRef}
+                className={`${
+                  isFriendTyping ? "slide-in" : "hidden"
+                } absolute top-0 left-0 bg-neutral-200 rounded-md flex space-x-1 font-bold px-2`}
               >
                 {[...Array(3)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`dot dot-${
-                      i + 1
-                    } relative w-[5px] h-[5px] rounded-full bg-black`}
-                  />
+                  <div key={i} className={`dot dot-${i + 1} relative`}>
+                    .
+                  </div>
                 ))}
               </div>
-            )}
+            </div>
+
             {lastMessageSeenTime && (
               <div className="self-end text-xs">{lastMessageSeenTime}</div>
             )}

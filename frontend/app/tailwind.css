@@ -83,10 +83,36 @@
   }
 }
 
-.slow-show {
+.slide-in {
   animation: slideIn 0.2s normal forwards;
 }
 
-.slow-hide {
-  animation: slideOut 0.2s normal forwards;
+.slide-out {
+  animation: slideOut 0.2s normal forwards ease-in;
+}
+
+@keyframes growHeight {
+  0% {
+    min-height: 0px;
+  }
+  100% {
+    min-height: 30px;
+  }
+}
+
+@keyframes shrinkHeight {
+  0% {
+    min-height: 30px;
+  }
+  100% {
+    min-height: 0px;
+  }
+}
+
+.slow-grow {
+  animation: growHeight 0.2s normal forwards linear;
+}
+
+.slow-shrink {
+  animation: shrinkHeight 0.2s normal forwards linear;
 }

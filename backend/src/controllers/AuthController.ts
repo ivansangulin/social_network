@@ -3,6 +3,7 @@ import z from "zod";
 import {
   findMyself,
   findUserByUsernameOrEmail,
+  findUserDataFromUsername,
   registerUser,
 } from "../services/UserService";
 import { check, oneOf } from "express-validator";
@@ -13,6 +14,7 @@ import {
 } from "../middleware/auth";
 import Validate from "../middleware/validate";
 import { getToken, Token } from "../utils/token";
+import { areFriends } from "../services/FriendshipService";
 
 const userRouter = Router();
 
@@ -104,5 +106,34 @@ userRouter.get("/me", RequiresAuth, async (req: Request, res: Response) => {
     return res.status(500).send("Error occured fetching data!");
   }
 });
+
+userRouter.get(
+  "/user-data",
+  RequiresAuth,
+  check("username").isString().trim().notEmpty(),
+  Validate,
+  async (req: Request, res: Response) => {
+    const myId = Number(req.userId);
+    const username = req.query.username as string;
+    try {
+      const userData = await findUserDataFromUsername(username);
+      if (!userData) {
+        return res.status(404).send("User not found!");
+      }
+      const friends = await areFriends(myId, userData.id);
+      return res.status(200).send({
+        areFriends: friends,
+        user: {
+          username: username,
+          lockedProfile: userData.locked_profile,
+          profilePictureUuid: userData.profile_picture_uuid,
+        },
+      });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Error occured fetching user data!");
+    }
+  }
+);
 
 export default userRouter;

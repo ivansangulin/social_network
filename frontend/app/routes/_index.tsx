@@ -11,14 +11,14 @@ import {
 import { Chats } from "~/components/chat";
 import { Post } from "~/components/post";
 import { SocketContext } from "~/root";
-import { Friend, FriendsPagingType, getFriends } from "~/service/friendship";
+import { Friend, FriendsPagingType, getMyFriends } from "~/service/friendship";
 import { getMainPagePosts, PostPaging, Post as PostType } from "~/service/post";
-import { me, User } from "~/service/user";
+import { me, MyData } from "~/service/user";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const [user, friendsPaging, postsPaging] = await Promise.all([
     me(request),
-    getFriends(request, null, null),
+    getMyFriends(request, null, null),
     getMainPagePosts(request, null),
   ]);
   if (!user) {
@@ -86,30 +86,27 @@ const ProfileData = ({
   user,
   backendUrl,
 }: {
-  user: User;
+  user: MyData;
   backendUrl: string | undefined;
 }) => {
   return (
     <div className="basis-1/5 p-4">
       <div className="flex flex-col items-center space-y-2">
         {user.profile_picture_uuid && backendUrl ? (
-          <Link
-            to={"/my-profile"}
-            className="rounded-full overflow-hidden aspect-square max-w-[150px]"
-          >
-            <img
-              alt=""
-              src={`${backendUrl}/image/profile_picture/${user.profile_picture_uuid}`}
-              className="object-cover min-h-full"
-            />
-          </Link>
+          <img
+            alt=""
+            src={`${backendUrl}/image/profile_picture/${user.profile_picture_uuid}`}
+            className="object-cover rounded-full aspect-square max-w-[150px]"
+          />
         ) : (
-          <Link to={"/my-profile"} className="overflow-hidden max-w-[150px]">
-            <img alt="" src="/images/default_profile_picture.png" />
-          </Link>
+          <img
+            alt=""
+            src="/images/default_profile_picture.png"
+            className="max-w-[150px]"
+          />
         )}
         <Link
-          to={"/my-profile"}
+          to={`/profile/${user.username}/posts`}
           className="text-2xl text-center min-w-[250px] shadow-2xl drop-shadow-2xl rounded-md border border-slate-100 p-1"
         >
           {user.username}

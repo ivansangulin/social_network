@@ -24,7 +24,7 @@ const postPagingSchema = z.object({
 export type Post = z.infer<typeof postSchema>;
 export type PostPaging = z.infer<typeof postPagingSchema>;
 
-export const getUserPosts = async (request: Request, cursor: string | null) => {
+export const getMyPosts = async (request: Request, cursor: string | null) => {
   const cookie = getCookie(request);
   if (!cookie) {
     return null;
@@ -74,6 +74,38 @@ export const getMainPagePosts = async (
     }
     const posts = await postPagingSchema.parse(await postsResponse.json());
     return posts;
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
+};
+
+export const getUserPosts = async (
+  request: Request,
+  username: string,
+  cursor: string | null
+) => {
+  const cookie = getCookie(request);
+  if (!cookie) {
+    return null;
+  }
+  try {
+    const postsResponse = await fetch(
+      `${process.env.BACKEND_URL}/post/user-posts?username=${username}&cursor=${
+        cursor ?? ""
+      }`,
+      {
+        method: "GET",
+        headers: {
+          Cookie: cookie,
+        },
+      }
+    );
+    if (!postsResponse.ok) {
+      return null;
+    }
+    const userPosts = postPagingSchema.parse(await postsResponse.json());
+    return userPosts;
   } catch (err) {
     console.log(err);
     return null;

@@ -1,27 +1,37 @@
-import { useLoaderData, useFetcher } from "@remix-run/react";
-import { useState, useEffect, useRef } from "react";
-import { getUserPosts, Post as PostType, PostPaging } from "~/service/post";
 import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
-import { me } from "~/service/user";
+import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
+import { useState, useRef, useEffect } from "react";
 import { Post } from "~/components/post";
+import { useUserData } from "~/hooks/useUserData";
+import {
+  getMyPosts,
+  getUserPosts,
+  PostPaging,
+  Post as PostType,
+} from "~/service/post";
+import { me } from "~/service/user";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const [user, userPostsPaging] = await Promise.all([
-    me(request),
-    getUserPosts(request, null),
-  ]);
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+  const user = await me(request);
   if (!user) {
     return redirect("/login");
   }
+  const { username } = params;
+  let userPostsPaging;
+  if (username === user.username) {
+    userPostsPaging = await getMyPosts(request, null);
+  } else {
+    userPostsPaging = await getUserPosts(request, username!, null);
+  }
   return json({
-    user: user!,
-    backendUrl: process.env.BACKEND_URL,
     userPostsPaging,
+    backendUrl: process.env.BACKEND_URL,
+    user,
   });
 };
 
 export default () => {
-  const { backendUrl, userPostsPaging } = useLoaderData<typeof loader>();
+  const { backendUrl, userPostsPaging, user } = useLoaderData<typeof loader>();
   const [posts, setPosts] = useState<PostType[]>(userPostsPaging?.posts ?? []);
   const cursor = useRef<number>(userPostsPaging?.cursor ?? 0);
   const fetching = useRef<boolean>(false);
@@ -29,6 +39,8 @@ export default () => {
     posts.length !== (userPostsPaging?.count ?? 0)
   );
   const fetcher = useFetcher();
+  const { username } = useParams();
+  const myProfile = user.username === username;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,7 +54,11 @@ export default () => {
         return;
       }
       fetching.current = true;
-      fetcher.load(`/resource/get-user-posts?cursor=${cursor.current}`);
+      fetcher.load(
+        `/resource/get-user-posts?cursor=${cursor.current}${
+          !myProfile ? `&username=${username}` : ""
+        }`
+      );
     };
     if (window) {
       window.addEventListener("scroll", handleScroll);
@@ -75,7 +91,9 @@ export default () => {
           </div>
         ) : (
           <div className="text-4xl text-center">
-            You have yet to publish a post...
+            {myProfile
+              ? "You don't have any posts yet..."
+              : "This user doesn't have any posts..."}
           </div>
         )
       ) : (

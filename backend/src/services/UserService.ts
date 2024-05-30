@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import { UserRegistrationType } from "../controllers/AuthController";
 import bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
@@ -113,4 +112,19 @@ export const updateStatus = async (userId: number, status: boolean) => {
       user_id: userId,
     },
   });
+};
+
+export const findUserDataFromUsername = async (username: string) => {
+  const userData = await prisma.user.findFirst({
+    select: {
+      id: true,
+      locked_profile: true,
+      profile_picture_uuid: true,
+    },
+    where: {
+      username: username,
+    },
+  });
+
+  return userData;
 };

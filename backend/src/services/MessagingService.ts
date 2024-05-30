@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import { areFriends } from "./FriendshipService";
 import {
   findUserUuidById,

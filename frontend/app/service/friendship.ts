@@ -19,7 +19,7 @@ export const friendsPagingSchema = z.object({
 export type FriendsPagingType = z.infer<typeof friendsPagingSchema>;
 export type Friend = z.infer<typeof friendSchema>;
 
-export const getFriends = async (
+export const getMyFriends = async (
   request: Request,
   cursor: string | null,
   search: string | null
@@ -30,7 +30,7 @@ export const getFriends = async (
   }
   try {
     const friendsResponse = await fetch(
-      `${process.env.BACKEND_URL}/friendship/friends?cursor=${
+      `${process.env.BACKEND_URL}/friendship/my-friends?cursor=${
         cursor ?? ""
       }${`&search=${search ?? ""}`}`,
       {
@@ -48,6 +48,43 @@ export const getFriends = async (
     );
     return friendsPaging;
   } catch (err) {
+    return null;
+  }
+};
+
+export const getUserFriends = async (
+  request: Request,
+  username: string,
+  cursor: string | null,
+  search: string | null
+) => {
+  const cookie = getCookie(request);
+  if (!cookie) {
+    return null;
+  }
+  try {
+    const friendsResponse = await fetch(
+      `${
+        process.env.BACKEND_URL
+      }/friendship/user-friends?username=${username}&cursor=${
+        cursor ?? ""
+      }${`&search=${search ?? ""}`}`,
+      {
+        method: "GET",
+        headers: {
+          Cookie: cookie,
+        },
+      }
+    );
+    if (!friendsResponse.ok) {
+      return null;
+    }
+    const friendsPaging = await friendsPagingSchema.parse(
+      await friendsResponse.json()
+    );
+    return friendsPaging;
+  } catch (err) {
+    console.log(err);
     return null;
   }
 };

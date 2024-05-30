@@ -1,26 +1,35 @@
-import { useLoaderData, useFetcher, json, redirect } from "@remix-run/react";
-import { useState, useEffect, ChangeEvent, useRef } from "react";
-import { Friend, FriendsPagingType, getFriends } from "~/service/friendship";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
+import { useLoaderData, useFetcher, useParams } from "@remix-run/react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
+import {
+  Friend,
+  FriendsPagingType,
+  getMyFriends,
+  getUserFriends,
+} from "~/service/friendship";
 import { me } from "~/service/user";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const [user, friendsPaging] = await Promise.all([
-    me(request),
-    getFriends(request, null, null),
-  ]);
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+  const user = await me(request);
   if (!user) {
     return redirect("/login");
   }
-  return json({
-    user: user!,
-    friendsPaging,
-    backendUrl: process.env.BACKEND_URL,
-  });
+  const username = params.username;
+  if (username) {
+    let friendsPaging;
+    if (username === user.username) {
+      friendsPaging = await getMyFriends(request, null, null);
+    } else {
+      friendsPaging = await getUserFriends(request, username, null, null);
+    }
+    return json({ user, friendsPaging, backendUrl: process.env.BACKEND_URL });
+  } else {
+    return redirect("/");
+  }
 };
 
 export default () => {
-  const { friendsPaging, backendUrl } = useLoaderData<typeof loader>();
+  const { user, friendsPaging, backendUrl } = useLoaderData<typeof loader>();
   const [friends, setFriends] = useState<Friend[]>(
     friendsPaging?.friends ?? []
   );
@@ -34,6 +43,8 @@ export default () => {
   const newSearch = useRef<boolean>(false);
 
   const fetcher = useFetcher();
+  const { username } = useParams();
+  const myProfile = user.username === username;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -78,7 +89,7 @@ export default () => {
     fetcher.load(
       `/resource/get-friends?search=${search.current}${
         !newSearch.current ? `&cursor=${cursor.current}` : ""
-      }`
+      }${!myProfile ? `&username=${username}` : ""}`
     );
   };
 
@@ -96,10 +107,10 @@ export default () => {
           className="rounded-lg min-h-12 px-4 border border-slate-300 w-full"
           placeholder="Search friends by username..."
           onChange={handleNewSearch}
-          />
-          {fetcher.state === "loading" && (
-            <div className="animate-bounce absolute -right-6">...</div>
-          )}
+        />
+        {fetcher.state === "loading" && (
+          <div className="animate-bounce absolute -right-6">...</div>
+        )}
       </div>
       {friends ? (
         friends.length > 0 ? (

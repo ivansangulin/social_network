@@ -61,6 +61,7 @@ export const getUserPosts = async (
       where: {
         user_id: userId,
       },
+      orderBy: { created: "desc" },
     }),
   ]);
 

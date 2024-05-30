@@ -233,7 +233,7 @@ const Friends = ({ onNewChat }: { onNewChat: (friend: Friend) => void }) => {
               {friends.map((friend) => (
                 <button
                   key={friend.uuid}
-                  className="flex items-center justify-between rounded-md p-2 hover:bg-slate-100 text-left bg-white"
+                  className="flex items-center justify-between rounded-md p-2 hover:bg-slate-100 text-left"
                   onClick={() => {
                     onNewChat(friend);
                   }}

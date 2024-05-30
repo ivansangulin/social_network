@@ -71,7 +71,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <SocketContext.Provider value={socket}>
           <ServerUrlContext.Provider value={backendURL!}>
-            <div className="min-h-screen w-full flex flex-col relative bg-indigo-50/50">
+            <div className="min-h-screen w-full flex flex-col relative bg-[#F2F4FF]">
               <Navbar />
               {children}
             </div>

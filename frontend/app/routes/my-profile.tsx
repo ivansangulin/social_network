@@ -20,8 +20,8 @@ export default () => {
   const pathname = useLocation().pathname;
 
   return (
-    <div className="flex flex-col space-y-8 items-center">
-      <div className="flex flex-col bg-white w-full max-h-80 items-center space-y-4 pt-8 fixed top-24 z-10">
+    <div className="flex flex-col items-center">
+      <div className="flex flex-col bg-white w-full h-fit items-center space-y-4 pt-8">
         {user.profile_picture_uuid && backendUrl ? (
           <div className="rounded-full overflow-hidden aspect-square max-w-[150px]">
             <img
@@ -61,7 +61,7 @@ export default () => {
           </Link>
         </div>
       </div>
-      <div className="flex flex-col items-center justify-center space-x-4 w-6/12 py-4 relative top-80 space-y-10">
+      <div className="flex flex-col items-center justify-center space-x-4 w-6/12 py-4">
         <Outlet />
       </div>
     </div>

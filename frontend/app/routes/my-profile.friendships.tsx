@@ -1,5 +1,5 @@
 import { useLoaderData, useFetcher, json, redirect } from "@remix-run/react";
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect, ChangeEvent, useRef } from "react";
 import { Friend, FriendsPagingType, getFriends } from "~/service/friendship";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { me } from "~/service/user";
@@ -21,26 +21,28 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default () => {
   const { friendsPaging, backendUrl } = useLoaderData<typeof loader>();
-  const [cursor, setCursor] = useState<number>(friendsPaging?.cursor ?? 0);
   const [friends, setFriends] = useState<Friend[]>(
     friendsPaging?.friends ?? []
   );
-  const [search, setSearch] = useState<string>("");
-  const [fetching, setFetching] = useState<boolean>(false);
-  const [hasMore, setHasMore] = useState<boolean>(
+
+  const search = useRef<string>("");
+  const cursor = useRef<number>(friendsPaging?.cursor ?? 0);
+  const fetching = useRef<boolean>(false);
+  const hasMore = useRef<boolean>(
     friends.length !== (friendsPaging?.count ?? 0)
   );
-  const [newSearch, setNewSearch] = useState<boolean>(false);
+  const newSearch = useRef<boolean>(false);
+
   const fetcher = useFetcher();
 
   useEffect(() => {
     const handleScroll = () => {
       if (
         document.documentElement.scrollHeight >
-          document.documentElement.offsetHeight +
+          document.documentElement.clientHeight +
             document.documentElement.scrollTop ||
-        fetching ||
-        !hasMore
+        fetching.current ||
+        !hasMore.current
       ) {
         return;
       }
@@ -52,58 +54,53 @@ export default () => {
         window.removeEventListener("scroll", handleScroll);
       };
     }
-  }, [fetching, hasMore]);
+  }, []);
 
   useEffect(() => {
-    setFetching(false);
     const fetcherFriendsPaging = fetcher.data as FriendsPagingType | null;
     if (fetcherFriendsPaging) {
       const fetcherFriends = fetcherFriendsPaging.friends;
-      if (!newSearch) {
+      if (!newSearch.current) {
         fetcherFriends.unshift(...friends);
       } else {
-        setNewSearch(false);
+        newSearch.current = false;
       }
-      setFriends((friends) => [...friends, ...fetcherFriends]);
-      setCursor(fetcherFriendsPaging.cursor);
-      setHasMore(
-        friends.length + fetcherFriends.length !== fetcherFriendsPaging.count
-      );
+      setFriends([...fetcherFriends]);
+      cursor.current = fetcherFriendsPaging.cursor;
+      hasMore.current =
+        friends.length + fetcherFriends.length !== fetcherFriendsPaging.count;
     }
+    fetching.current = false;
   }, [fetcher.data]);
 
-  useEffect(() => {
-    if (newSearch) {
-      fetch();
-    }
-  }, [newSearch]);
-
   const fetch = () => {
-    setFetching(true);
+    fetching.current = true;
     fetcher.load(
-      `/resource/get-friends?search=${search}${
-        newSearch ? "" : `&cursor=${cursor}`
+      `/resource/get-friends?search=${search.current}${
+        !newSearch.current ? `&cursor=${cursor.current}` : ""
       }`
     );
   };
 
   const handleNewSearch = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.currentTarget.value);
-    setNewSearch(true);
+    search.current = e.currentTarget.value;
+    newSearch.current = true;
+    fetch();
   };
 
   return (
     <div className="flex flex-col space-y-6 w-10/12 items-center">
-      <div className="flex space-x-4 items-center">
-        <div className="text-2xl">My friends</div>
-        {fetching && <div className="animate-bounce">...</div>}
+      <div className="flex relative space-x-4 items-center w-6/12">
+        <input
+          type="text"
+          className="rounded-lg min-h-12 px-4 border border-slate-300 w-full"
+          placeholder="Search friends by username..."
+          onChange={handleNewSearch}
+          />
+          {fetcher.state === "loading" && (
+            <div className="animate-bounce absolute -right-6">...</div>
+          )}
       </div>
-      <input
-        type="text"
-        className="rounded-lg min-h-12 px-4 border border-slate-300 w-6/12"
-        placeholder="Search friends by username..."
-        onChange={handleNewSearch}
-      />
       {friends ? (
         friends.length > 0 ? (
           <div className="grid grid-cols-3 gap-4 max-h-[100%] min-w-full">

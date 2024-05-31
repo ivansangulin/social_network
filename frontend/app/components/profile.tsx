@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation, useParams } from "@remix-run/react";
 import { MyData, UserData } from "~/service/user";
-import { NewsPaperIcon, UserGroupIcon } from "./icons";
+import { LockClosedIcon, NewsPaperIcon, UserGroupIcon } from "./icons";
 
 export const MyProfile = ({
   user,
@@ -87,7 +87,7 @@ export const UserProfile = ({
             <img alt="" src="/images/default_profile_picture.png" />
           </div>
         )}
-        <div className="text-2xl text-center w-[250px] shadow-2xl drop-shadow-2xl rounded-md border border-slate-100 p-1">
+        <div className="text-2xl text-center w-[250px] shadow-2xl drop-shadow-2xl rounded-md border border-slate-100 p-1 !mb-4">
           {username}
         </div>
         {allowedToViewProfile && (
@@ -118,7 +118,10 @@ export const UserProfile = ({
           <Outlet />
         </div>
       ) : (
-        <div>Locked</div>
+        <div className="flex items-center justify-center space-x-2 w-6/12 py-4">
+          <LockClosedIcon className="h-10 w-10" />
+          <div className="text-xl">{"This user's profile is private!"}</div>
+        </div>
       )}
     </div>
   );

@@ -81,7 +81,7 @@ export default () => {
   }, [fetcher.data]);
 
   return (
-    <div className="w-8/12">
+    <div className="w-full">
       {posts ? (
         posts.length > 0 ? (
           <div className="flex flex-col space-y-12 max-h-[100%]">

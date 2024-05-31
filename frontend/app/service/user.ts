@@ -13,6 +13,7 @@ const userDataSchema = z.object({
     lockedProfile: z.boolean(),
     profilePictureUuid: z.string().nullish(),
   }),
+  friendRequestIsPending: z.boolean(),
 });
 
 export type MyData = z.infer<typeof myDataSchema>;
@@ -20,7 +21,12 @@ export type UserData = z.infer<typeof userDataSchema>;
 
 export const me = async (request: Request) => {
   const cookie = getCookie(request);
-  if (!cookie) {
+  const url = new URL(request.url);
+  if (
+    !cookie ||
+    url.pathname.includes("/login") ||
+    url.pathname.includes("/register")
+  ) {
     return null;
   }
   try {

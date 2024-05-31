@@ -15,6 +15,7 @@ import {
 import Validate from "../middleware/validate";
 import { getToken, Token } from "../utils/token";
 import { areFriends } from "../services/FriendshipService";
+import { isFriendRequestPending } from "../services/FriendRequestService";
 
 const userRouter = Router();
 
@@ -120,7 +121,10 @@ userRouter.get(
       if (!userData) {
         return res.status(404).send("User not found!");
       }
-      const friends = await areFriends(myId, userData.id);
+      const [friends, friendRequestIsPending] = await Promise.all([
+        areFriends(myId, userData.id),
+        isFriendRequestPending(myId, userData.id),
+      ]);
       return res.status(200).send({
         areFriends: friends,
         user: {
@@ -128,6 +132,7 @@ userRouter.get(
           lockedProfile: userData.locked_profile,
           profilePictureUuid: userData.profile_picture_uuid,
         },
+        friendRequestIsPending: !!friendRequestIsPending,
       });
     } catch (err) {
       console.log(err);

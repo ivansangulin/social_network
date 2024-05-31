@@ -6,8 +6,9 @@ export default {
     extend: {
       colors: {
         primary: "#7c73e6",
-        "primary-dark": "#6643b5",
-        secondary: "#c4c1e0",
+        "primary-dark": "#6E66CC",
+        secondary: "#F2F4FF",
+        "secondary-dark": "#E6E9FF",
       },
     },
     screens: {

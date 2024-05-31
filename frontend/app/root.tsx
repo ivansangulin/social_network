@@ -20,7 +20,10 @@ export const links: LinksFunction = () => [
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const user = await me(request);
-  return json({ user, backendURL: process.env.BACKEND_URL });
+  if (user) {
+    return json({ user, backendURL: process.env.BACKEND_URL });
+  }
+  return json({ user: null, backendURL: null });
 };
 
 export type rootLoader = typeof loader;
@@ -71,7 +74,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <SocketContext.Provider value={socket}>
           <ServerUrlContext.Provider value={backendURL!}>
-            <div className="min-h-screen w-full flex flex-col relative bg-[#F2F4FF]">
+            <div className="min-h-screen w-full flex flex-col relative bg-secondary">
               <Navbar />
               {children}
             </div>

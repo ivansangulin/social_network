@@ -8,17 +8,19 @@ generator client {
 }
 
 model User {
-  id                   Int          @id @default(autoincrement())
-  username             String       @unique @db.VarChar()
-  email                String       @unique @db.VarChar()
-  password             String       @db.VarChar()
-  profile_picture_uuid String?      @db.VarChar()
-  locked_profile       Boolean      @db.Boolean()
-  uuid                 String       @unique @db.VarChar()
-  friendshipToFriend   Friendship[] @relation("friendRelation")
-  friendshipToUser     Friendship[] @relation("userRelation")
+  id                   Int             @id @default(autoincrement())
+  username             String          @unique @db.VarChar()
+  email                String          @unique @db.VarChar()
+  password             String          @db.VarChar()
+  profile_picture_uuid String?         @db.VarChar()
+  locked_profile       Boolean         @db.Boolean()
+  uuid                 String          @unique @db.VarChar()
+  friendshipToFriend   Friendship[]    @relation("friendRelation")
+  friendshipToUser     Friendship[]    @relation("userRelation")
   posts                Post[]
   user_status          UserStatus?
+  friendRequestFrom    FriendRequest[] @relation("fromUser")
+  friendRequestTo      FriendRequest[] @relation("toUser")
 
   @@map("users")
 }
@@ -77,11 +79,11 @@ model Chat {
 }
 
 model Message {
-  id           Int      @id @default(autoincrement())
-  created      DateTime @default(now()) @db.Timestamptz()
-  from_user_id Int      @db.Integer()
-  to_user_id   Int      @db.Integer()
-  message      String   @db.VarChar()
+  id           Int       @id @default(autoincrement())
+  created      DateTime  @default(now()) @db.Timestamptz()
+  from_user_id Int       @db.Integer()
+  to_user_id   Int       @db.Integer()
+  message      String    @db.VarChar()
   read_at      DateTime? @db.Timestamptz()
 
   @@map("messages")
@@ -94,4 +96,17 @@ model UserStatus {
   last_active DateTime @default(now()) @db.Timestamptz()
 
   @@map("user_status")
+}
+
+model FriendRequest {
+  id           Int      @id @default(autoincrement())
+  from_user_id Int      @db.Integer()
+  to_user_id   Int      @db.Integer()
+  fromUser     User     @relation(name: "fromUser", fields: [from_user_id], references: [id])
+  toUser       User     @relation(name: "toUser", fields: [to_user_id], references: [id])
+  created      DateTime @default(now()) @db.Timestamptz()
+  read         Boolean  @default(false) @db.Boolean()
+  accepted     Boolean? @db.Boolean()
+
+  @@map("friend_requests")
 }

@@ -100,7 +100,7 @@ export default () => {
   };
 
   return (
-    <div className="flex flex-col space-y-6 w-10/12 items-center">
+    <div className="flex flex-col space-y-6 w-full items-center">
       <div className="flex relative space-x-4 items-center w-6/12">
         <input
           type="text"

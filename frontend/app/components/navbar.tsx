@@ -1,5 +1,6 @@
 import { Link } from "@remix-run/react";
 import { useUserData } from "~/hooks/useUserData";
+import { FriendRequests } from "./friend-requests";
 
 export const Navbar = () => {
   const user = useUserData();
@@ -9,12 +10,15 @@ export const Navbar = () => {
         App name
       </Link>
       {!!user && (
-        <Link
-          to={"/login"}
-          className="text-white text-3xl py-4 pr-24 hover:underline"
-        >
-          Log out
-        </Link>
+        <div className="flex justify-between items-center space-x-4">
+          <FriendRequests />
+          <Link
+            to={"/login"}
+            className="text-white text-2xl py-4 pr-24 hover:underline"
+          >
+            Log out
+          </Link>
+        </div>
       )}
     </div>
   );

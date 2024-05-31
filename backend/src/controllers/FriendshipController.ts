@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { areFriends, getFriends } from "../services/FriendshipService";
 import { check } from "express-validator";
 import { findUserDataFromUsername } from "../services/UserService";
+import { getMyPendingFriendRequests } from "../services/FriendRequestService";
 
 const friendshipRouter = Router();
 
@@ -48,6 +49,20 @@ friendshipRouter.get(
     } catch (err) {
       console.log(err);
       return res.status(500).send("Error occured fetching user friends!");
+    }
+  }
+);
+
+friendshipRouter.get(
+  "/friend-requests",
+  async (req: Request, res: Response) => {
+    const userId = Number(req.userId);
+    try {
+      const pendingRequests = await getMyPendingFriendRequests(userId);
+      return res.status(200).json(pendingRequests);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Error occured fetching friend requests!");
     }
   }
 );

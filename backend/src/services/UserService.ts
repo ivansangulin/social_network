@@ -70,7 +70,7 @@ export const findUserUuidById = async (id: number) => {
   return userUuid;
 };
 
-export const getFriendIdFromUuid = async (friendUuid: string) => {
+export const findFriendIdFromUuid = async (friendUuid: string) => {
   const { id: friendId } = await prisma.user.findUniqueOrThrow({
     select: {
       id: true,

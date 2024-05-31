@@ -1,7 +1,7 @@
 import { areFriends } from "./FriendshipService";
 import {
   findUserUuidById,
-  getFriendIdFromUuid,
+  findFriendIdFromUuid,
   myMessagingData,
 } from "./UserService";
 import {
@@ -21,7 +21,7 @@ export const createMessage = async (
   message: string,
   created: Date
 ) => {
-  const friendId = await getFriendIdFromUuid(friendUuid);
+  const friendId = await findFriendIdFromUuid(friendUuid);
 
   const friends = await areFriends(userId, friendId);
   if (!friends) {
@@ -49,7 +49,7 @@ export const getMessages = async (
   friendUuid: string,
   cursor: number | undefined
 ) => {
-  const friendId = await getFriendIdFromUuid(friendUuid);
+  const friendId = await findFriendIdFromUuid(friendUuid);
 
   const friends = await areFriends(userId, friendId);
   if (!friends) {
@@ -164,7 +164,7 @@ export const readMessages = async (
   friendUuid: string,
   readAt: Date
 ) => {
-  const friendId = await getFriendIdFromUuid(friendUuid);
+  const friendId = await findFriendIdFromUuid(friendUuid);
 
   const friends = await areFriends(userId, friendId);
   if (!friends) {

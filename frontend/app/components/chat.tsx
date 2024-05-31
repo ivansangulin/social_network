@@ -379,12 +379,11 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
         {
           sender: `${tempKey}`,
           message: textAreaValue,
-          time: new Date()
-            .toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-            .replace(/AM|PM/, ""),
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          }),
         },
         ...messages,
       ];

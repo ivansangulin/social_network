@@ -6,6 +6,7 @@ import {
   differenceInYears,
 } from "date-fns";
 import { prisma } from "../utils/client";
+import { findUserDataFromUsername } from "./UserService";
 
 export const calculateAwayTime = (last_active: Date) => {
   const now = new Date();
@@ -223,4 +224,20 @@ export const getActiveFriendsUuids = async (userId: number) => {
   );
 
   return friendsUuids;
+};
+
+export const removeFriend = async (userId: number, friendUsername: string) => {
+  const friendData = await findUserDataFromUsername(friendUsername);
+  if (!friendData) {
+    throw new Error("No such user!");
+  }
+  const { id: friendId } = friendData;
+  await prisma.friendship.deleteMany({
+    where: {
+      OR: [
+        { AND: [{ user_id: userId }, { friend_id: friendId }] },
+        { AND: [{ friend_id: userId }, { user_id: friendId }] },
+      ],
+    },
+  });
 };

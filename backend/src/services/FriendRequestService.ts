@@ -111,7 +111,18 @@ export const declineFriendRequest = async (
   if (!friendRequest) {
     throw new Error("No such friend request!");
   }
-  await prisma.friendRequest.update({
+  const {
+    from_user_id: senderId,
+    fromUser: { username: senderUsername },
+  } = await prisma.friendRequest.update({
+    select: {
+      from_user_id: true,
+      fromUser: {
+        select: {
+          username: true,
+        },
+      },
+    },
     data: {
       accepted: false,
     },
@@ -119,6 +130,8 @@ export const declineFriendRequest = async (
       id: friendRequest.id,
     },
   });
+
+  return { senderId, senderUsername };
 };
 
 export const isFriendRequestPending = async (

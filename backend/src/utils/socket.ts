@@ -1,11 +1,5 @@
 import { io, ISocket } from "../app";
-import {
-  acceptFriendRequest,
-  declineFriendRequest,
-  readFriendRequests,
-  sendFriendRequest,
-} from "../services/FriendRequestService";
-import { removeFriend } from "../services/FriendshipService";
+import { readFriendRequests } from "../services/FriendRequestService";
 import { createMessage, readMessages } from "../services/MessagingService";
 import { createPost } from "../services/PostService";
 import { findUserUuidById, updateStatus } from "../services/UserService";
@@ -105,74 +99,6 @@ export const connectSocket = () => {
       }
     };
     socket.on("readMessages", readMessagesListener);
-
-    const newFriendRequestListener = async (
-      {
-        friendUsername,
-      }: {
-        friendUsername: string;
-      },
-      ack: (success: boolean) => void
-    ) => {
-      try {
-        const { toUserUuid, username, profile_picture_uuid } =
-          await sendFriendRequest(userId, friendUsername, new Date());
-        io.to(toUserUuid).emit("newFriendRequest", {
-          username,
-          profile_picture_uuid,
-        });
-        if (ack) ack(true);
-      } catch (err) {
-        console.log(err);
-        if (ack) ack(false);
-      }
-    };
-    socket.on("newFriendRequest", newFriendRequestListener);
-
-    const handleFriendRequestListener = async (
-      {
-        friendUsername,
-        accepted,
-      }: {
-        friendUsername: string;
-        accepted: boolean;
-      },
-      ack: (success: boolean) => void
-    ) => {
-      try {
-        if (accepted) {
-          const { friendUuid, username } = await acceptFriendRequest(
-            userId,
-            friendUsername
-          );
-          io.to(friendUuid).emit("notification", {
-            text: `${username} accepted your friend request!
-            `,
-          });
-        } else {
-          await declineFriendRequest(userId, friendUsername);
-        }
-        if (ack) ack(true);
-      } catch (err) {
-        console.log(err);
-        if (ack) ack(false);
-      }
-    };
-    socket.on("handleFriendRequest", handleFriendRequestListener);
-
-    const removeFriendListener = async (
-      { friendUsername }: { friendUsername: string },
-      ack: (success: boolean) => void
-    ) => {
-      try {
-        await removeFriend(userId, friendUsername);
-        if (ack) ack(true);
-      } catch (err) {
-        console.log(err);
-        if (ack) ack(true);
-      }
-    };
-    socket.on("removeFriend", removeFriendListener);
 
     const readFriendRequestsListener = async () => {
       try {

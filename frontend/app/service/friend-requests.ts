@@ -24,7 +24,7 @@ export const getPendingFriendRequests = async (request: Request) => {
       return null;
     }
     const friendRequestsResponse = await fetch(
-      `${process.env.BACKEND_URL}/friendship/friend-requests`,
+      `${process.env.BACKEND_URL}/friend-request`,
       {
         method: "GET",
         headers: {
@@ -39,5 +39,94 @@ export const getPendingFriendRequests = async (request: Request) => {
   } catch (err) {
     console.log(err);
     return null;
+  }
+};
+
+export const addFriend = async (request: Request, friendUsername: string) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return false;
+    }
+    const addFriendResponse = await fetch(
+      `${process.env.BACKEND_URL}/friend-request/add`,
+      {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friendUsername: friendUsername }),
+      }
+    );
+    if (!addFriendResponse.ok) {
+      console.log(addFriendResponse);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.log(err);
+    return false;
+  }
+};
+
+export const removeFriend = async (
+  request: Request,
+  friendUsername: string
+) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return false;
+    }
+    const removeFriendResponse = await fetch(
+      `${process.env.BACKEND_URL}/friend-request/remove`,
+      {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friendUsername }),
+      }
+    );
+    if (!removeFriendResponse.ok) {
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.log(err);
+    return false;
+  }
+};
+
+export const handleFriendRequest = async (
+  request: Request,
+  friendUsername: string,
+  accepted: boolean
+) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return false;
+    }
+    const handleFriendRequestResponse = await fetch(
+      `${process.env.BACKEND_URL}/friend-request/handle`,
+      {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friendUsername, accepted }),
+      }
+    );
+    if (!handleFriendRequestResponse.ok) {
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.log(err);
+    return false;
   }
 };

@@ -15,7 +15,7 @@ export const FriendRequests = () => {
   const backendUrl = useServerUrl();
 
   useEffect(() => {
-    fetcher.load("/resource/get-friend-requests");
+    fetcher.load("/resource/friend-requests");
     if (window) {
       const onWindowClick = () => {
         setWindowOpen(false);
@@ -26,6 +26,61 @@ export const FriendRequests = () => {
       };
     }
   }, []);
+
+  useEffect(() => {
+    const handleNewFriendRequest = ({
+      username,
+      profile_picture_uuid,
+    }: {
+      username: string;
+      profile_picture_uuid: string;
+    }) => {
+      setFriendRequests((friendRequests) => {
+        return [
+          { read: windowOpen, user: { username, profile_picture_uuid } },
+          ...friendRequests,
+        ];
+      });
+      if (windowOpen) {
+        socket?.emit("readFriendRequests");
+      } else {
+        setUnreadFriendRequestsCount((count) => {
+          return count + 1;
+        });
+      }
+    };
+    socket?.on("newFriendRequest", handleNewFriendRequest);
+
+    const canceledRequestListener = ({
+      friendUsername,
+    }: {
+      friendUsername: string;
+    }) => {
+      const friendRequest = friendRequests.find(
+        (fr) => fr.user.username === friendUsername
+      );
+      if (friendRequest) {
+        setFriendRequests((friendRequests) => {
+          return [
+            ...friendRequests.filter(
+              (fr) => fr.user.username !== friendUsername
+            ),
+          ];
+        });
+        if (friendRequest.read) {
+          setUnreadFriendRequestsCount((count) => {
+            return count - 1;
+          });
+        }
+      }
+    };
+    socket?.on("canceledRequest", canceledRequestListener);
+
+    return () => {
+      socket?.off("canceledRequest", canceledRequestListener);
+      socket?.off("newFriendRequest", handleNewFriendRequest);
+    };
+  }, [socket]);
 
   useEffect(() => {
     const fetcherData = fetcher.data as PendingRequests | null;
@@ -52,19 +107,46 @@ export const FriendRequests = () => {
   };
 
   const handleFriendRequest = (username: string, accepted: boolean) => {
-    socket?.emit(
-      "handleFriendRequest",
-      { friendUsername: username, accepted },
-      (success: boolean) => {
-        if (success) {
+    const friendRequest = friendRequests.find(
+      (fr) => fr.user.username === username
+    );
+    setFriendRequests((friendRequests) => {
+      return [
+        ...friendRequests.filter((req) => req.user.username !== username),
+      ];
+    });
+    fetch("/resource/friend-requests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "handle",
+        friendUsername: username,
+        accepted: accepted,
+      }),
+    })
+      .then((res) => res.json())
+      .then((success: boolean) => {
+        if (!success && friendRequest) {
           setFriendRequests((friendRequests) => {
             return [
+              friendRequest,
               ...friendRequests.filter((req) => req.user.username !== username),
             ];
           });
         }
-      }
-    );
+      })
+      .catch(() => {
+        if (friendRequest) {
+          setFriendRequests((friendRequests) => {
+            return [
+              friendRequest,
+              ...friendRequests.filter((req) => req.user.username !== username),
+            ];
+          });
+        }
+      });
   };
 
   return (

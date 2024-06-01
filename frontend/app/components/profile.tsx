@@ -7,8 +7,7 @@ import {
   UserMinusIcon,
   UserPlusIcon,
 } from "./icons";
-import { useContext, useState } from "react";
-import { SocketContext } from "~/root";
+import { useState } from "react";
 
 export const MyProfile = ({
   user,
@@ -78,45 +77,78 @@ export const UserProfile = ({
   const { username } = useParams();
   const [areFriends, setAreFriends] = useState<boolean>(userData.areFriends);
   const allowedToViewProfile = areFriends || !userData.user.lockedProfile;
-  const socket = useContext(SocketContext);
   const [pendingRequest, setPendingRequest] = useState<boolean>(
     userData.friendRequestIsPending
   );
 
   const addFriend = () => {
-    socket?.emit(
-      "newFriendRequest",
-      { friendUsername: username },
-      (success: boolean) => {
-        if (success) {
-          setPendingRequest(true);
+    setPendingRequest(true);
+    fetch("/resource/friend-requests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "add",
+        friendUsername: username,
+      }),
+    })
+      .then((res) => res.json())
+      .then((success: boolean) => {
+        if (!success) {
+          setPendingRequest(false);
         }
-      }
-    );
+      })
+      .catch(() => {
+        setPendingRequest(false);
+      });
   };
 
   const cancelFriendRequest = () => {
-    socket?.emit(
-      "handleFriendRequest",
-      { accepted: false, friendUsername: username },
-      (success: boolean) => {
-        if (success) {
-          setPendingRequest(false);
+    setPendingRequest(false);
+    fetch("/resource/friend-requests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "handle",
+        friendUsername: username,
+        accepted: false,
+      }),
+    })
+      .then((res) => res.json())
+      .then((success: boolean) => {
+        if (!success) {
+          setPendingRequest(true);
         }
-      }
-    );
+      })
+      .catch(() => {
+        setPendingRequest(true);
+      });
   };
 
   const removeFriend = () => {
-    socket?.emit(
-      "removeFriend",
-      { friendUsername: username },
-      (success: boolean) => {
-        if (success) {
-          setAreFriends(false);
+    setAreFriends(false);
+    fetch("/resource/friend-requests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "remove",
+        friendUsername: username,
+      }),
+    })
+      .then((res) => res.json())
+      .then((success: boolean) => {
+        if (!success) {
+          setAreFriends(true);
         }
-      }
-    );
+      })
+      .catch(() => {
+        setAreFriends(true);
+      });
   };
 
   return (

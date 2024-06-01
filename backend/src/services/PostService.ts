@@ -56,6 +56,14 @@ export const getUserPosts = async (
             username: true,
           },
         },
+        likes: {
+          where: {
+            user_id: userId,
+          },
+          select: {
+            id: true,
+          },
+        },
       },
       where: {
         user_id: userId,
@@ -64,9 +72,14 @@ export const getUserPosts = async (
     }),
   ]);
 
+  const mappedPosts = posts.map((post) => {
+    const { likes, ...props } = post;
+    return { liked: likes.length > 0, ...props };
+  });
+
   const userPostPaging = {
     count,
-    posts,
+    posts: mappedPosts,
     cursor: posts.length > 0 ? posts[posts.length - 1].id : 0,
   };
 
@@ -95,9 +108,18 @@ export const createPost = async (userId: number, text: string) => {
           username: true,
         },
       },
+      likes: {
+        where: {
+          user_id: userId,
+        },
+        select: {
+          id: true,
+        },
+      },
     },
   });
-  return post;
+  const { likes, ...props } = post;
+  return { post: { liked: likes.length > 0, ...props } };
 };
 
 export const getMainPagePosts = async (
@@ -146,17 +168,49 @@ export const getMainPagePosts = async (
             username: true,
           },
         },
+        likes: {
+          where: {
+            user_id: userId,
+          },
+          select: {
+            id: true,
+          },
+        },
       },
       orderBy: {
         created: "desc",
       },
     }),
   ]);
+
+  const mappedPosts = posts.map((post) => {
+    const { likes, ...props } = post;
+    return { liked: likes.length > 0, ...props };
+  });
+
   const userPostPaging = {
     count,
-    posts,
+    posts: mappedPosts,
     cursor: posts.length > 0 ? posts[posts.length - 1].id : 0,
   };
 
   return userPostPaging;
+};
+
+export const likePost = async (userId: number, postId: number) => {
+  await prisma.like.create({
+    data: {
+      post_id: postId,
+      user_id: userId,
+    },
+  });
+};
+
+export const dislikePost = async (userId: number, postId: number) => {
+  await prisma.like.deleteMany({
+    where: {
+      post_id: postId,
+      user_id: userId,
+    },
+  });
 };

@@ -116,3 +116,19 @@
 .slow-shrink {
   animation: shrinkHeight 0.2s normal forwards linear;
 }
+
+.pulse-animation {
+  animation: pulse 0.2s normal linear;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

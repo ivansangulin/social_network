@@ -1,5 +1,10 @@
 import { Router, Request, Response } from "express";
-import { getMainPagePosts, getUserPosts } from "../services/PostService";
+import {
+  getMainPagePosts,
+  getUserPosts,
+  likePost,
+  dislikePost,
+} from "../services/PostService";
 import { check } from "express-validator";
 import Validate from "../middleware/validate";
 import { areFriends } from "../services/FriendshipService";
@@ -60,6 +65,29 @@ postRouter.get(
     } catch (err) {
       console.log(err);
       return res.status(500).send("Error occured fetching user posts!");
+    }
+  }
+);
+
+postRouter.post(
+  "/like",
+  check("liked").isBoolean().notEmpty(),
+  check("postId").trim().isNumeric().notEmpty(),
+  Validate,
+  async (req, res) => {
+    const userId = Number(req.userId);
+    const liked = !!req.body.liked;
+    const postId = Number(req.body.postId);
+    try {
+      if (liked) {
+        await likePost(userId, postId);
+      } else {
+        await dislikePost(userId, postId);
+      }
+      return res.status(200);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Couldn't like/unlike a post!");
     }
   }
 );

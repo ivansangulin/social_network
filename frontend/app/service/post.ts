@@ -13,6 +13,7 @@ const postSchema = z.object({
     username: z.string(),
     profile_picture_uuid: z.string(),
   }),
+  liked: z.boolean(),
 });
 
 const postPagingSchema = z.object({
@@ -109,5 +110,33 @@ export const getUserPosts = async (
   } catch (err) {
     console.log(err);
     return null;
+  }
+};
+
+export const likePost = async (
+  request: Request,
+  liked: boolean,
+  postId: number
+) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return false;
+    }
+    const likeResponse = await fetch(`${process.env.BACKEND_URL}/post/like`, {
+      method: "POST",
+      headers: {
+        Cookie: cookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ liked, postId }),
+    });
+    if (!likeResponse.ok) {
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.log(err);
+    return true;
   }
 };

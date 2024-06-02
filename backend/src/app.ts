@@ -14,6 +14,7 @@ import { findUserUuidById, updateStatus } from "./services/UserService";
 import { createPost } from "./services/PostService";
 import { connectSocket } from "./utils/socket";
 import friendRequestRouter from "./controllers/FriendRequestController";
+import notificationRouter from "./controllers/NotificationController";
 
 declare global {
   namespace Express {
@@ -40,6 +41,7 @@ app.use("/friendship", RequiresAuth, friendshipRouter);
 app.use("/post", RequiresAuth, postRouter);
 app.use("/messaging", RequiresAuth, messagingRouter);
 app.use("/friend-request", RequiresAuth, friendRequestRouter);
+app.use("/notification", RequiresAuth, notificationRouter);
 
 const server = http.createServer(app);
 export const io = new Server(server, {

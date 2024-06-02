@@ -198,12 +198,36 @@ export const getMainPagePosts = async (
 };
 
 export const likePost = async (userId: number, postId: number) => {
-  await prisma.like.create({
+  const {
+    user: { username },
+    post: {
+      user_id: friendId,
+      user: { uuid: friendUuid },
+    },
+  } = await prisma.like.create({
     data: {
       post_id: postId,
       user_id: userId,
     },
+    select: {
+      user: {
+        select: {
+          username: true,
+        },
+      },
+      post: {
+        select: {
+          user_id: true,
+          user: {
+            select: {
+              uuid: true,
+            },
+          },
+        },
+      },
+    },
   });
+  return { username, friendId, friendUuid };
 };
 
 export const dislikePost = async (userId: number, postId: number) => {

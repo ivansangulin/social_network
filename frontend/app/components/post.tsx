@@ -1,6 +1,6 @@
 import { Post as PostType } from "~/service/post";
 import { HeartIcon, CommentIcon } from "./icons";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 
 export const Post = ({
   post,
@@ -12,7 +12,10 @@ export const Post = ({
   const [liked, setLiked] = useState<boolean>(post.liked);
   const [likeCount, setLikeCount] = useState<number>(post._count.likes);
 
-  const onLike = () => {
+  const onLike = (e: FormEvent<HTMLButtonElement>) => {
+    !liked
+      ? e.currentTarget.classList.add("pulse-animation")
+      : e.currentTarget.classList.remove("pulse-animation");
     setLikeCount((likeCount) => {
       return !liked ? ++likeCount : --likeCount;
     });
@@ -88,9 +91,7 @@ export const Post = ({
       <div className="flex justify-around">
         <button onClick={onLike}>
           <HeartIcon
-            className={`w-8 h-8 stroke-primary ${
-              liked && "fill-primary pulse-animation"
-            }`}
+            className={`w-8 h-8 stroke-primary ${liked && "fill-primary"}`}
           />
         </button>
       </div>

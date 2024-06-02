@@ -1,0 +1,50 @@
+import { z } from "zod";
+import { getCookie } from "./user";
+
+const notificationSchema = z.object({
+  id: z.number(),
+  message: z.string(),
+  created: z.string(),
+  post_id: z.number(),
+  read: z.boolean(),
+  sender: z.object({
+    username: z.string(),
+    profile_picture_uuid: z.string().nullish(),
+  }),
+});
+
+const notificationDataSchema = z.object({
+  notifications: z.array(notificationSchema),
+  unreadCount: z.number(),
+});
+
+export type NotificationType = z.infer<typeof notificationSchema>;
+export type NotificationData = z.infer<typeof notificationDataSchema>;
+
+export const findMyNotifications = async (request: Request) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return null;
+    }
+    const notificationsResponse = await fetch(
+      `${process.env.BACKEND_URL}/notification/my-notifications`,
+      {
+        method: "GET",
+        headers: {
+          Cookie: cookie,
+        },
+      }
+    );
+    if (!notificationsResponse.ok) {
+      return null;
+    }
+    const notifications = await notificationDataSchema.parse(
+      await notificationsResponse.json()
+    );
+    return notifications;
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
+};

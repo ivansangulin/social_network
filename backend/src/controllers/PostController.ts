@@ -9,6 +9,8 @@ import { check } from "express-validator";
 import Validate from "../middleware/validate";
 import { areFriends } from "../services/FriendshipService";
 import { findUserDataFromUsername } from "../services/UserService";
+import { createNotification } from "../services/NotificationService";
+import { io } from "../app";
 
 const postRouter = Router();
 
@@ -80,7 +82,19 @@ postRouter.post(
     const postId = Number(req.body.postId);
     try {
       if (liked) {
-        await likePost(userId, postId);
+        const { username, friendId, friendUuid } = await likePost(
+          userId,
+          postId
+        );
+        if (userId !== friendId) {
+          const notification = await createNotification(
+            friendId,
+            postId,
+            `${username} has liked your post!`,
+            userId
+          );
+          io.to(friendUuid).emit("notification", { notification });
+        }
       } else {
         await dislikePost(userId, postId);
       }

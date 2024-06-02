@@ -1,6 +1,7 @@
 import { io, ISocket } from "../app";
 import { readFriendRequests } from "../services/FriendRequestService";
 import { createMessage, readMessages } from "../services/MessagingService";
+import { readNotifications } from "../services/NotificationService";
 import { createPost } from "../services/PostService";
 import { findUserUuidById, updateStatus } from "../services/UserService";
 
@@ -108,6 +109,15 @@ export const connectSocket = () => {
       }
     };
     socket.on("readFriendRequests", readFriendRequestsListener);
+
+    const readNotificationsListener = async () => {
+      try {
+        await readNotifications(userId);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    socket.on("readNotifications", readNotificationsListener);
 
     socket.on("disconnect", async () => {
       await updateStatus(userId, false);

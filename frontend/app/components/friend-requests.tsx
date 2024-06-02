@@ -51,7 +51,7 @@ export const FriendRequests = () => {
     };
     socket?.on("newFriendRequest", handleNewFriendRequest);
 
-    const canceledRequestListener = ({
+    const handleCanceledRequest = ({
       friendUsername,
     }: {
       friendUsername: string;
@@ -74,10 +74,10 @@ export const FriendRequests = () => {
         }
       }
     };
-    socket?.on("canceledRequest", canceledRequestListener);
+    socket?.on("canceledRequest", handleCanceledRequest);
 
     return () => {
-      socket?.off("canceledRequest", canceledRequestListener);
+      socket?.off("canceledRequest", handleCanceledRequest);
       socket?.off("newFriendRequest", handleNewFriendRequest);
     };
   }, [socket]);
@@ -96,7 +96,7 @@ export const FriendRequests = () => {
     }
   }, [fetcher.data]);
 
-  const onClick = () => {
+  const onWindowOpen = () => {
     if (!windowOpen) {
       setUnreadFriendRequestsCount(0);
       socket?.emit("readFriendRequests");
@@ -152,7 +152,7 @@ export const FriendRequests = () => {
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div className="relative h-fit" onClick={(e) => e.stopPropagation()}>
-      <button className="h-fit relative" onClick={onClick}>
+      <button className="h-fit relative" onClick={onWindowOpen}>
         <UsersIcon
           className={`h-8 w-8 ${windowOpen ? "fill-black" : "fill-white"}`}
         />
@@ -169,9 +169,11 @@ export const FriendRequests = () => {
           } bg-white border-black overflow-y-auto scrollbar-thin`}
         >
           {friendRequests.length > 0 ? (
-            friendRequests.map((request) => (
+            friendRequests.map((request, idx) => (
               <div
-                className="py-4 px-2 flex justify-between items-center"
+                className={`py-4 px-2 flex justify-between items-center ${
+                  idx % 2 !== 0 && "bg-secondary"
+                }`}
                 key={request.user.username}
               >
                 <div className="flex items-center space-x-2">

@@ -21,6 +21,8 @@ model User {
   user_status          UserStatus?
   friendRequestFrom    FriendRequest[] @relation("fromUser")
   friendRequestTo      FriendRequest[] @relation("toUser")
+  Like                 Like[]
+  Notification         Notification[]
 
   @@map("users")
 }
@@ -53,6 +55,7 @@ model Like {
   post_id Int  @db.Integer()
   post    Post @relation(fields: [post_id], references: [id])
   user_id Int  @db.Integer()
+  user    User @relation(fields: [user_id], references: [id])
 
   @@map("likes")
 }
@@ -109,4 +112,17 @@ model FriendRequest {
   accepted     Boolean? @db.Boolean()
 
   @@map("friend_requests")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  user_id   Int      @db.Integer()
+  post_id   Int      @db.Integer()
+  message   String   @db.VarChar()
+  created   DateTime @default(now()) @db.Timestamptz()
+  read      Boolean  @default(false) @db.Boolean()
+  sender_id Int      @db.Integer()
+  sender    User     @relation(fields: [sender_id], references: [id])
+
+  @@map("notifications")
 }

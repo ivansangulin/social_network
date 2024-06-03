@@ -117,7 +117,7 @@ export default () => {
           <div className="grid grid-cols-3 gap-4 max-h-[100%] min-w-full">
             {friends.map((friend) => (
               <div
-                key={friend.uuid}
+                key={friend.id}
                 className="flex items-center space-x-4 border-2 border-slate-300 rounded-md col-span-1 p-2"
               >
                 {friend.profile_picture_uuid && backendUrl ? (

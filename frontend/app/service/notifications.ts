@@ -2,10 +2,10 @@ import { z } from "zod";
 import { getCookie } from "./user";
 
 const notificationSchema = z.object({
-  id: z.number(),
+  id: z.string(),
   message: z.string(),
   created: z.string(),
-  post_id: z.number(),
+  post_id: z.string().nullish(),
   read: z.boolean(),
   sender: z.object({
     username: z.string(),

@@ -9,15 +9,15 @@ import { check } from "express-validator";
 import Validate from "../middleware/validate";
 import { areFriends } from "../services/FriendshipService";
 import { findUserDataFromUsername } from "../services/UserService";
-import { createNotification } from "../services/NotificationService";
-import { io } from "../app";
 
 const postRouter = Router();
 
 postRouter.get("/my-posts", async (req: Request, res: Response) => {
-  const userId = Number(req.userId);
+  const userId = req.userId as string;
   const cursor =
-    typeof req.query.cursor === "string" ? Number(req.query.cursor) : undefined;
+    typeof req.query.cursor === "string"
+      ? (req.query.cursor as string)
+      : undefined;
 
   try {
     const userPostPaging = await getUserPosts(userId, cursor);
@@ -28,9 +28,11 @@ postRouter.get("/my-posts", async (req: Request, res: Response) => {
 });
 
 postRouter.get("/main-page-posts", async (req: Request, res: Response) => {
-  const userId = Number(req.userId);
+  const userId = req.userId as string;
   const cursor =
-    typeof req.query.cursor === "string" ? Number(req.query.cursor) : undefined;
+    typeof req.query.cursor === "string"
+      ? (req.query.cursor as string)
+      : undefined;
   try {
     const mainPagePosts = await getMainPagePosts(userId, cursor);
     return res.status(200).json(mainPagePosts);
@@ -45,11 +47,11 @@ postRouter.get(
   check("username").isString().trim().notEmpty(),
   Validate,
   async (req: Request, res: Response) => {
-    const myId = Number(req.userId);
+    const myId = req.userId as string;
     const username = req.query.username as string;
     const cursor =
       typeof req.query.cursor === "string"
-        ? Number(req.query.cursor)
+        ? (req.query.cursor as string)
         : undefined;
     try {
       const userData = await findUserDataFromUsername(username);
@@ -74,27 +76,15 @@ postRouter.get(
 postRouter.post(
   "/like",
   check("liked").isBoolean().notEmpty(),
-  check("postId").trim().isNumeric().notEmpty(),
+  check("postId").isString().trim().notEmpty(),
   Validate,
   async (req, res) => {
-    const userId = Number(req.userId);
+    const userId = req.userId as string;
     const liked = !!req.body.liked;
-    const postId = Number(req.body.postId);
+    const postId = req.body.postId as string;
     try {
       if (liked) {
-        const { username, friendId, friendUuid } = await likePost(
-          userId,
-          postId
-        );
-        if (userId !== friendId) {
-          const notification = await createNotification(
-            friendId,
-            postId,
-            `${username} has liked your post!`,
-            userId
-          );
-          io.to(friendUuid).emit("notification", { notification });
-        }
+        await likePost(userId, postId);
       } else {
         await dislikePost(userId, postId);
       }

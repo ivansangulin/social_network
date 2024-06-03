@@ -3,7 +3,7 @@ import { getCookie } from "./user";
 
 const friendSchema = z.object({
   username: z.string(),
-  uuid: z.string(),
+  id: z.string(),
   profile_picture_uuid: z.string().nullish(),
   user_status: z.object({
     is_online: z.boolean(),
@@ -12,7 +12,7 @@ const friendSchema = z.object({
 });
 export const friendsPagingSchema = z.object({
   count: z.number(),
-  cursor: z.number(),
+  cursor: z.string(),
   friends: z.array(friendSchema),
 });
 

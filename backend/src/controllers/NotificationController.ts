@@ -4,7 +4,7 @@ import { findMyNotifications } from "../services/NotificationService";
 const notificationRouter = Router();
 
 notificationRouter.get("/my-notifications", async (req, res) => {
-  const userId = Number(req.userId);
+  const userId = req.userId as string;
   try {
     const notifications = await findMyNotifications(userId);
     return res.status(200).send(notifications);

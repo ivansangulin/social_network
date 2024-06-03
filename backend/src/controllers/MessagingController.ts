@@ -7,17 +7,17 @@ const messagingRouter = Router();
 
 messagingRouter.get(
   "/messages",
-  check("friendUuid").isString().trim().notEmpty().isUUID(),
+  check("friendId").isString().trim().notEmpty(),
   Validate,
   async (req: Request, res: Response) => {
-    const userId = Number(req.userId);
-    const friendUuid = req.query.friendUuid as string;
+    const userId = req.userId as string;
+    const friendId = req.query.friendId as string;
     const cursor =
       typeof req.query.cursor === "string"
-        ? Number(req.query.cursor)
+        ? (req.query.cursor as string)
         : undefined;
     try {
-      const messages = await getMessages(userId, friendUuid, cursor);
+      const messages = await getMessages(userId, friendId, cursor);
       return res.status(200).send(messages);
     } catch (err) {
       console.log(err);

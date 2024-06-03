@@ -1,34 +1,28 @@
+import { io } from "../app";
 import { prisma } from "../utils/client";
 import { areFriends } from "./FriendshipService";
-import { findUserDataFromUsername } from "./UserService";
+import { createNotification } from "./NotificationService";
 
 export const sendFriendRequest = async (
-  userId: number,
-  friendUsername: string,
+  userId: string,
+  friendId: string,
   created: Date
 ) => {
-  const toUserData = await findUserDataFromUsername(friendUsername);
-  if (!toUserData) {
-    throw new Error("No such user");
-  }
-  const { id: toUserId } = toUserData;
-
   const [exists, friendShipExists] = await Promise.all([
-    isFriendRequestPending(userId, toUserId),
-    areFriends(userId, toUserId),
+    isFriendRequestPending(userId, friendId),
+    areFriends(userId, friendId),
   ]);
   if (exists || friendShipExists) {
     throw new Error("Friend request/Friendship exists!");
   }
 
   const {
-    toUser: { uuid: toUserUuid },
     fromUser: { username, profile_picture_uuid },
   } = await prisma.friendRequest.create({
     select: {
       toUser: {
         select: {
-          uuid: true,
+          id: true,
         },
       },
       fromUser: {
@@ -40,23 +34,18 @@ export const sendFriendRequest = async (
     },
     data: {
       from_user_id: userId,
-      to_user_id: toUserId,
+      to_user_id: friendId,
       created: created,
     },
   });
-
-  return { toUserUuid, username, profile_picture_uuid };
+  io.to(friendId).emit("newFriendRequest", {
+    id: userId,
+    username,
+    profile_picture_uuid,
+  });
 };
 
-export const acceptFriendRequest = async (
-  userId: number,
-  friendUsername: string
-) => {
-  const friendData = await findUserDataFromUsername(friendUsername);
-  if (!friendData) {
-    throw new Error("No such user");
-  }
-  const { id: friendId } = friendData;
+export const acceptFriendRequest = async (userId: string, friendId: string) => {
   const friendRequest = await isFriendRequestPending(userId, friendId);
   if (!friendRequest) {
     throw new Error("No such friend request!");
@@ -64,7 +53,6 @@ export const acceptFriendRequest = async (
     throw new Error("Not my request!");
   }
   const {
-    friend: { uuid: friendUuid },
     user: { username },
   } = await prisma.$transaction(async (prismaTx) => {
     const { from_user_id: friendId } = await prismaTx.friendRequest.update({
@@ -81,11 +69,6 @@ export const acceptFriendRequest = async (
         friend_id: friendId,
       },
       select: {
-        friend: {
-          select: {
-            uuid: true,
-          },
-        },
         user: {
           select: {
             username: true,
@@ -95,18 +78,18 @@ export const acceptFriendRequest = async (
     });
   });
 
-  return { friendUuid, username };
+  await createNotification(
+    friendId,
+    undefined,
+    `${username} has accepted your friend request!`,
+    userId
+  );
 };
 
 export const declineFriendRequest = async (
-  userId: number,
-  friendUsername: string
+  userId: string,
+  friendId: string
 ) => {
-  const friendData = await findUserDataFromUsername(friendUsername);
-  if (!friendData) {
-    throw new Error("No such user");
-  }
-  const { id: friendId } = friendData;
   const friendRequest = await isFriendRequestPending(userId, friendId);
   if (!friendRequest) {
     throw new Error("No such friend request!");
@@ -131,12 +114,16 @@ export const declineFriendRequest = async (
     },
   });
 
-  return { senderId, senderUsername };
+  if (senderId === userId) {
+    io.to(friendId).emit("canceledRequest", {
+      friendUsername: senderUsername,
+    });
+  }
 };
 
 export const isFriendRequestPending = async (
-  userId: number,
-  friendId: number
+  userId: string,
+  friendId: string
 ) => {
   const friendRequest = await prisma.friendRequest.findFirst({
     where: {
@@ -147,19 +134,20 @@ export const isFriendRequestPending = async (
             { AND: [{ to_user_id: userId }, { from_user_id: friendId }] },
           ],
         },
-        { accepted: null },
+        { OR: [{ accepted: null }, { accepted: { isSet: false } }] },
       ],
     },
   });
   return friendRequest;
 };
 
-export const getMyPendingFriendRequests = async (userId: number) => {
+export const getMyPendingFriendRequests = async (userId: string) => {
   const [friendRequests, unreadCount] = await Promise.all([
     prisma.friendRequest.findMany({
       select: {
         fromUser: {
           select: {
+            id: true,
             username: true,
             profile_picture_uuid: true,
           },
@@ -168,14 +156,14 @@ export const getMyPendingFriendRequests = async (userId: number) => {
       },
       where: {
         to_user_id: userId,
-        accepted: null,
+        OR: [{ accepted: null }, { accepted: { isSet: false } }],
       },
       orderBy: { created: "desc" },
     }),
     prisma.friendRequest.count({
       where: {
         to_user_id: userId,
-        accepted: null,
+        OR: [{ accepted: null }, { accepted: { isSet: false } }],
         read: false,
       },
     }),
@@ -190,7 +178,7 @@ export const getMyPendingFriendRequests = async (userId: number) => {
   };
 };
 
-export const readFriendRequests = async (userId: number) => {
+export const readFriendRequests = async (userId: string) => {
   await prisma.friendRequest.updateMany({
     data: {
       read: true,
@@ -198,7 +186,7 @@ export const readFriendRequests = async (userId: number) => {
     where: {
       to_user_id: userId,
       read: false,
-      accepted: null,
+      OR: [{ accepted: null }, { accepted: { isSet: false } }],
     },
   });
 };

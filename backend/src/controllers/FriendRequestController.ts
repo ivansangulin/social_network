@@ -6,14 +6,13 @@ import {
   getMyPendingFriendRequests,
   sendFriendRequest,
 } from "../services/FriendRequestService";
-import { io } from "../app";
 import { removeFriend } from "../services/FriendshipService";
 import Validate from "../middleware/validate";
 
 const friendRequestRouter = Router();
 
 friendRequestRouter.get("/", async (req: Request, res: Response) => {
-  const userId = Number(req.userId);
+  const userId = req.userId as string;
   try {
     const pendingRequests = await getMyPendingFriendRequests(userId);
     return res.status(200).json(pendingRequests);
@@ -25,18 +24,13 @@ friendRequestRouter.get("/", async (req: Request, res: Response) => {
 
 friendRequestRouter.post(
   "/add",
-  check("friendUsername").isString().trim().notEmpty(),
+  check("friendId").isString().trim().notEmpty(),
   Validate,
   async (req, res) => {
-    const userId = Number(req.userId);
-    const friendUsername = req.body.friendUsername;
+    const userId = req.userId as string;
+    const friendId = req.body.friendId;
     try {
-      const { toUserUuid, username, profile_picture_uuid } =
-        await sendFriendRequest(userId, friendUsername, new Date());
-      io.to(toUserUuid).emit("newFriendRequest", {
-        username,
-        profile_picture_uuid,
-      });
+      await sendFriendRequest(userId, friendId, new Date());
       return res.status(200);
     } catch (err) {
       console.log(err);
@@ -47,13 +41,13 @@ friendRequestRouter.post(
 
 friendRequestRouter.post(
   "/remove",
-  check("friendUsername").isString().trim().notEmpty(),
+  check("friendId").isString().trim().notEmpty(),
   Validate,
   async (req, res) => {
-    const userId = Number(req.userId);
-    const friendUsername = req.body.friendUsername;
+    const userId = req.userId as string;
+    const friendId = req.body.friendId;
     try {
-      await removeFriend(userId, friendUsername);
+      await removeFriend(userId, friendId);
       return res.status(200);
     } catch (err) {
       console.log(err);
@@ -64,31 +58,18 @@ friendRequestRouter.post(
 
 friendRequestRouter.post(
   "/handle",
-  check("friendUsername").isString().trim().notEmpty(),
+  check("friendId").isString().trim().notEmpty(),
   check("accepted").isBoolean().notEmpty(),
   Validate,
   async (req, res) => {
-    const userId = Number(req.userId);
-    const friendUsername = req.body.friendUsername;
+    const userId = req.userId as string;
+    const friendId = req.body.friendId;
     const accepted = req.body.accepted;
     try {
       if (accepted) {
-        const { friendUuid, username } = await acceptFriendRequest(
-          userId,
-          friendUsername
-        );
-        io.to(friendUuid).emit("notification", {
-          text: `${username} accepted your friend request!
-            `,
-        });
+        await acceptFriendRequest(userId, friendId);
       } else {
-        const { senderId, senderUsername } = await declineFriendRequest(
-          userId,
-          friendUsername
-        );
-        if (senderId === userId) {
-          io.emit("canceledRequest", { friendUsername: senderUsername });
-        }
+        await declineFriendRequest(userId, friendId);
       }
       return res.status(200);
     } catch (err) {

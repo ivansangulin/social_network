@@ -36,7 +36,7 @@ type ChatProps = {
   inPopover?: boolean;
   defaultOpen: boolean;
   popoverOpen: boolean;
-  setFirst?: (uuid: string) => void;
+  setFirst?: (id: string) => void;
   closePopover: () => void;
   notification?: boolean;
 };
@@ -48,8 +48,8 @@ export const Chats = ({
   onNewChat,
 }: {
   chats: ChatData[];
-  onDeleteChat: (uuid: string) => void;
-  setFirst: (uuid: string) => void;
+  onDeleteChat: (id: string) => void;
+  setFirst: (id: string) => void;
   onNewChat: (friendData: Friend) => void;
 }) => {
   const socket = useContext(SocketContext);
@@ -114,21 +114,21 @@ export const Chats = ({
       socket.on("message", handleNewMessage);
 
       const handleFriendTyping = ({
-        friendUuid,
+        friendId,
         typing,
       }: {
-        friendUuid: string;
+        friendId: string;
         typing: boolean;
       }) => {
-        if (chatRefs.current[friendUuid]) {
-          chatRefs.current[friendUuid].isTyping(typing);
+        if (chatRefs.current[friendId]) {
+          chatRefs.current[friendId].isTyping(typing);
         }
       };
       socket.on("userTyping", handleFriendTyping);
 
-      const handleReadMessages = ({ friendUuid }: { friendUuid: string }) => {
-        if (chatRefs.current[friendUuid]) {
-          chatRefs.current[friendUuid].readMessages();
+      const handleReadMessages = ({ friendId }: { friendId: string }) => {
+        if (chatRefs.current[friendId]) {
+          chatRefs.current[friendId].readMessages();
         }
       };
       socket.on("readMessages", handleReadMessages);
@@ -147,14 +147,14 @@ export const Chats = ({
     >
       {shownChats.map(({ friend, defaultOpen, notification }) => (
         <Chat
-          key={friend.uuid}
+          key={friend.id}
           className=""
           friend={friend}
-          onDeleteChat={() => onDeleteChat(friend.uuid)}
+          onDeleteChat={() => onDeleteChat(friend.id)}
           popoverOpen={popoverOpen}
           defaultOpen={defaultOpen}
           closePopover={closePopover}
-          ref={(el) => (chatRefs.current[friend.uuid] = el)}
+          ref={(el) => (chatRefs.current[friend.id] = el)}
           notification={notification}
         />
       ))}
@@ -183,10 +183,10 @@ export const Chats = ({
             >
               {popoverChats.map(({ friend }) => (
                 <Chat
-                  key={friend.uuid}
+                  key={friend.id}
                   className="px-4"
                   friend={friend}
-                  onDeleteChat={() => onDeleteChat(friend.uuid)}
+                  onDeleteChat={() => onDeleteChat(friend.id)}
                   inPopover
                   popoverOpen={popoverOpen}
                   defaultOpen={false}
@@ -224,7 +224,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
 
   const messageFetcher = useFetcher();
 
-  const cursor = useRef<number>();
+  const cursor = useRef<string>();
   const hasMore = useRef<boolean>(true);
   const fetching = useRef<boolean>(false);
   const messageContainerRef = useRef<HTMLDivElement>(null);
@@ -252,7 +252,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
         socket &&
         messageContainerRef.current?.scrollTop === 0
       ) {
-        socket.emit("readMessages", { friendUuid: props.friend.uuid });
+        socket.emit("readMessages", { friendId: props.friend.id });
       }
     },
     isTyping(typing: boolean) {
@@ -309,12 +309,12 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
         }
         fetching.current = true;
         messageFetcher.load(
-          `/resource/get-messages?friendUuid=${props.friend.uuid}&cursor=${cursor.current}`
+          `/resource/get-messages?friendId=${props.friend.id}&cursor=${cursor.current}`
         );
       }
     };
     messageFetcher.load(
-      `/resource/get-messages?friendUuid=${props.friend.uuid}`
+      `/resource/get-messages?friendId=${props.friend.id}`
     );
     const messageRefCurrent = messageContainerRef.current;
     if (messageRefCurrent) {
@@ -330,7 +330,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
     if (props.inPopover) {
       e.stopPropagation();
       if (props.setFirst) {
-        props.setFirst(props.friend.uuid);
+        props.setFirst(props.friend.id);
         return;
       }
     }
@@ -348,12 +348,12 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
     if (socket && textAreaValue < e.currentTarget.value) {
       clearTimeout(typingTimeoutRef.current);
       socket.emit("userTyping", {
-        friendUuid: props.friend.uuid,
+        friendId: props.friend.id,
         typing: true,
       });
       typingTimeoutRef.current = setTimeout(() => {
         socket.emit("userTyping", {
-          friendUuid: props.friend.uuid,
+          friendId: props.friend.id,
           typing: false,
         });
       }, typingTimeout);
@@ -392,7 +392,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
       typingContainerRef.current.scrollIntoView({ behavior: "instant" });
     }
     const message = {
-      friendUuid: props.friend.uuid,
+      friendId: props.friend.id,
       message: textAreaValue,
       created: new Date(),
     };
@@ -416,7 +416,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
   const onTextAreaFocus = () => {
     if (notifications > 0 && messageContainerRef.current?.scrollTop === 0) {
       socket?.emit("readMessages", {
-        friendUuid: props.friend.uuid,
+        friendId: props.friend.id,
         readAt: new Date(),
       });
       setNotifications(0);
@@ -492,7 +492,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
             {messages.map((msg, index) => (
               <div
                 className={`max-w-[80%] flex items-center space-x-2 rounded-md p-2 ${
-                  msg.sender === props.friend.uuid
+                  msg.sender === props.friend.id
                     ? "self-start bg-zinc-600"
                     : "self-end bg-primary"
                 }`}

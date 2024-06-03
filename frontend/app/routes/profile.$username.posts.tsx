@@ -2,7 +2,6 @@ import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
 import { useState, useRef, useEffect } from "react";
 import { Post } from "~/components/post";
-import { useUserData } from "~/hooks/useUserData";
 import {
   getMyPosts,
   getUserPosts,

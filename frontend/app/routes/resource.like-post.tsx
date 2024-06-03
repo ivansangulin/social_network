@@ -4,7 +4,7 @@ import { likePost } from "~/service/post";
 
 const actionSchema = z.object({
   liked: z.boolean(),
-  postId: z.number(),
+  postId: z.string(),
 });
 
 export const action = async ({ request }: ActionFunctionArgs) => {

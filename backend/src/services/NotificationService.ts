@@ -1,14 +1,15 @@
 import { subWeeks } from "date-fns";
 import { prisma } from "../utils/client";
+import { io } from "../app";
 
 export const createNotification = async (
-  userId: number,
-  postId: number,
+  userId: string,
+  postId: string | undefined,
   message: string,
-  senderId: number
+  senderId: string
 ) => {
   //TODO debounce
-  return await prisma.notification.create({
+  const notification = await prisma.notification.create({
     data: {
       user_id: userId,
       post_id: postId,
@@ -29,9 +30,10 @@ export const createNotification = async (
       },
     },
   });
+  io.to(userId).emit("notification", { notification });
 };
 
-export const findMyNotifications = async (userId: number) => {
+export const findMyNotifications = async (userId: string) => {
   const lastWeek = subWeeks(new Date(), 1);
   const [notifications, unreadCount] = await Promise.all([
     prisma.notification.findMany({
@@ -69,7 +71,7 @@ export const findMyNotifications = async (userId: number) => {
   return { notifications, unreadCount };
 };
 
-export const readNotifications = async (userId: number) => {
+export const readNotifications = async (userId: string) => {
   await prisma.notification.updateMany({
     where: {
       user_id: userId,

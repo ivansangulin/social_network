@@ -1,5 +1,5 @@
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -8,13 +8,12 @@ generator client {
 }
 
 model User {
-  id                   Int             @id @default(autoincrement())
-  username             String          @unique @db.VarChar()
-  email                String          @unique @db.VarChar()
-  password             String          @db.VarChar()
-  profile_picture_uuid String?         @db.VarChar()
-  locked_profile       Boolean         @db.Boolean()
-  uuid                 String          @unique @db.VarChar()
+  id                   String          @id @default(auto()) @map("_id") @db.ObjectId
+  username             String          @unique
+  email                String          @unique
+  password             String
+  profile_picture_uuid String?
+  locked_profile       Boolean
   friendshipToFriend   Friendship[]    @relation("friendRelation")
   friendshipToUser     Friendship[]    @relation("userRelation")
   posts                Post[]
@@ -28,21 +27,20 @@ model User {
 }
 
 model Friendship {
-  id        Int  @unique @default(autoincrement())
-  user_id   Int  @db.Integer()
-  user      User @relation(name: "userRelation", fields: [user_id], references: [id])
-  friend_id Int  @db.Integer()
-  friend    User @relation(name: "friendRelation", fields: [friend_id], references: [id])
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  user_id   String @db.ObjectId
+  user      User   @relation(name: "userRelation", fields: [user_id], references: [id])
+  friend_id String @db.ObjectId
+  friend    User   @relation(name: "friendRelation", fields: [friend_id], references: [id])
 
-  @@id(name: "friendship_id", [user_id, friend_id])
   @@map("friendships")
 }
 
 model Post {
-  id       Int       @id @unique @default(autoincrement())
-  text     String    @db.VarChar()
-  created  DateTime  @default(now()) @db.Timestamptz()
-  user_id  Int       @db.Integer()
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  text     String
+  created  DateTime  @default(now())
+  user_id  String    @db.ObjectId
   user     User      @relation(fields: [user_id], references: [id])
   likes    Like[]
   comments Comment[]
@@ -51,77 +49,67 @@ model Post {
 }
 
 model Like {
-  id      Int  @id @unique @default(autoincrement())
-  post_id Int  @db.Integer()
-  post    Post @relation(fields: [post_id], references: [id])
-  user_id Int  @db.Integer()
-  user    User @relation(fields: [user_id], references: [id])
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  post_id String @db.ObjectId
+  post    Post   @relation(fields: [post_id], references: [id])
+  user_id String @db.ObjectId
+  user    User   @relation(fields: [user_id], references: [id])
 
   @@map("likes")
 }
 
 model Comment {
-  id      Int      @id @unique @default(autoincrement())
-  user_id Int      @db.Integer()
-  post_id Int      @db.Integer()
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  user_id String   @db.ObjectId
+  post_id String   @db.ObjectId
   post    Post     @relation(fields: [post_id], references: [id])
-  text    String   @db.VarChar()
+  text    String
   created DateTime @default(now()) @db.Date()
 
   @@map("comments")
 }
 
-model Chat {
-  id        Int    @unique @default(autoincrement())
-  uuid      String @unique @default(uuid()) @db.VarChar()
-  user_id   Int    @db.Integer()
-  friend_id Int    @db.Integer()
-
-  @@id(name: "chat_id", [user_id, friend_id])
-  @@map("chats")
-}
-
 model Message {
-  id           Int       @id @default(autoincrement())
-  created      DateTime  @default(now()) @db.Timestamptz()
-  from_user_id Int       @db.Integer()
-  to_user_id   Int       @db.Integer()
-  message      String    @db.VarChar()
-  read_at      DateTime? @db.Timestamptz()
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  created      DateTime  @default(now())
+  from_user_id String    @db.ObjectId
+  to_user_id   String    @db.ObjectId
+  message      String
+  read_at      DateTime?
 
   @@map("messages")
 }
 
 model UserStatus {
-  user_id     Int      @unique
+  user_id     String   @id @map("_id") @db.ObjectId
   user        User     @relation(fields: [user_id], references: [id])
-  is_online   Boolean  @default(false) @db.Boolean()
-  last_active DateTime @default(now()) @db.Timestamptz()
+  is_online   Boolean  @default(true)
+  last_active DateTime @default(now())
 
   @@map("user_status")
 }
 
 model FriendRequest {
-  id           Int      @id @default(autoincrement())
-  from_user_id Int      @db.Integer()
-  to_user_id   Int      @db.Integer()
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  from_user_id String   @db.ObjectId
+  to_user_id   String   @db.ObjectId
   fromUser     User     @relation(name: "fromUser", fields: [from_user_id], references: [id])
   toUser       User     @relation(name: "toUser", fields: [to_user_id], references: [id])
-  created      DateTime @default(now()) @db.Timestamptz()
-  read         Boolean  @default(false) @db.Boolean()
-  accepted     Boolean? @db.Boolean()
+  created      DateTime @default(now())
+  read         Boolean  @default(false)
+  accepted     Boolean?
 
   @@map("friend_requests")
 }
 
 model Notification {
-  id        Int      @id @default(autoincrement())
-  user_id   Int      @db.Integer()
-  post_id   Int      @db.Integer()
-  message   String   @db.VarChar()
-  created   DateTime @default(now()) @db.Timestamptz()
-  read      Boolean  @default(false) @db.Boolean()
-  sender_id Int      @db.Integer()
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  user_id   String   @db.ObjectId
+  post_id   String?  @db.ObjectId
+  message   String
+  created   DateTime @default(now())
+  read      Boolean  @default(false)
+  sender_id String   @db.ObjectId
   sender    User     @relation(fields: [sender_id], references: [id])
 
   @@map("notifications")

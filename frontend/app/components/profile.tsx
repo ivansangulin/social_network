@@ -1,11 +1,13 @@
 import { Link, Outlet, useLocation, useParams } from "@remix-run/react";
 import { MyData, UserData } from "~/service/user";
 import {
+  CheckIcon,
   LockClosedIcon,
   NewsPaperIcon,
   UserGroupIcon,
   UserMinusIcon,
   UserPlusIcon,
+  XMarkIcon,
 } from "./icons";
 import { useState } from "react";
 
@@ -78,7 +80,7 @@ export const UserProfile = ({
   const [areFriends, setAreFriends] = useState<boolean>(userData.areFriends);
   const allowedToViewProfile = areFriends || !userData.user.lockedProfile;
   const [pendingRequest, setPendingRequest] = useState<boolean>(
-    userData.friendRequestIsPending
+    !!userData.friendRequestSenderId
   );
 
   const addFriend = () => {
@@ -90,7 +92,7 @@ export const UserProfile = ({
       },
       body: JSON.stringify({
         action: "add",
-        friendUsername: username,
+        friendId: userData.user.id,
       }),
     })
       .then((res) => res.json())
@@ -113,7 +115,7 @@ export const UserProfile = ({
       },
       body: JSON.stringify({
         action: "handle",
-        friendUsername: username,
+        friendId: userData.user.id,
         accepted: false,
       }),
     })
@@ -137,7 +139,7 @@ export const UserProfile = ({
       },
       body: JSON.stringify({
         action: "remove",
-        friendUsername: username,
+        friendId: userData.user.id,
       }),
     })
       .then((res) => res.json())
@@ -151,6 +153,39 @@ export const UserProfile = ({
       });
   };
 
+  const handleFriendRequest = (id: string, accepted: boolean) => {
+    if (accepted) {
+      setAreFriends(true);
+    }
+    setPendingRequest(false);
+    fetch("/resource/friend-requests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "handle",
+        friendId: id,
+        accepted: accepted,
+      }),
+    })
+      .then((res) => res.json())
+      .then((success: boolean) => {
+        if (!success) {
+          if (accepted) {
+            setAreFriends(false);
+          }
+          setPendingRequest(true);
+        }
+      })
+      .catch(() => {
+        if (accepted) {
+          setAreFriends(false);
+        }
+        setPendingRequest(true);
+      });
+  };
+  
   return (
     <div className="flex flex-col items-center">
       <div className="flex flex-col bg-white w-full h-fit items-center space-y-4 pt-8">
@@ -180,7 +215,7 @@ export const UserProfile = ({
                 <div>Add friend</div>
                 <UserPlusIcon className="h-6 w-6 fill-white" />
               </button>
-            ) : (
+            ) : userData.friendRequestSenderId !== userData.user.id ? (
               <button
                 className="flex bg-secondary hover:bg-secondary-dark py-2 px-3 rounded-lg items-center space-x-2"
                 onClick={cancelFriendRequest}
@@ -188,6 +223,22 @@ export const UserProfile = ({
                 <div>Cancel request</div>
                 <UserMinusIcon className="h-6 w-6" />
               </button>
+            ) : (
+              <div className="flex rounded-md bg-secondary py-2 px-3 items-center space-x-2">
+                <div>{`Accept friend request?`}</div>
+                <button
+                  className="rounded-full hover:bg-stone-100"
+                  onClick={() => handleFriendRequest(userData.user.id, true)}
+                >
+                  <CheckIcon className="h-6 w-6 fill-green-500" />
+                </button>
+                <button
+                  className="rounded-full hover:bg-stone-100"
+                  onClick={() => handleFriendRequest(userData.user.id, false)}
+                >
+                  <XMarkIcon className="h-6 w-6 stroke-amber-600" />
+                </button>
+              </div>
             )
           ) : (
             <button

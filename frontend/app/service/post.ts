@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getCookie } from "./user";
 
 const postSchema = z.object({
-  id: z.number(),
+  id: z.string(),
   createdLocalDate: z.string(),
   text: z.string(),
   _count: z.object({
@@ -11,14 +11,14 @@ const postSchema = z.object({
   }),
   user: z.object({
     username: z.string(),
-    profile_picture_uuid: z.string(),
+    profile_picture_uuid: z.string().nullish(),
   }),
   liked: z.boolean(),
 });
 
 const postPagingSchema = z.object({
   count: z.number(),
-  cursor: z.number(),
+  cursor: z.string(),
   posts: z.array(postSchema),
 });
 
@@ -116,7 +116,7 @@ export const getUserPosts = async (
 export const likePost = async (
   request: Request,
   liked: boolean,
-  postId: number
+  postId: string
 ) => {
   try {
     const cookie = getCookie(request);

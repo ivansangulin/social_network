@@ -34,11 +34,10 @@ export const calculateAwayTime = (last_active: Date) => {
 const FRIENDS_PAGING_TAKE = 20;
 
 export const getFriends = async (
-  userId: number,
-  cursor: number | undefined,
+  userId: string,
+  cursor: string | undefined,
   search: string | undefined | null
 ) => {
-  //make a materialized view?
   const [count, friends] = await prisma.$transaction([
     prisma.friendship.count({
       where: {
@@ -83,7 +82,6 @@ export const getFriends = async (
         friend: {
           select: {
             username: true,
-            uuid: true,
             profile_picture_uuid: true,
             id: true,
             user_status: {
@@ -97,7 +95,6 @@ export const getFriends = async (
         user: {
           select: {
             username: true,
-            uuid: true,
             profile_picture_uuid: true,
             id: true,
             user_status: {
@@ -161,12 +158,12 @@ export const getFriends = async (
     cursor:
       friendsFiltered.length > 0
         ? friendsFiltered[friendsFiltered.length - 1].id
-        : 0,
+        : "",
   };
   return friendsPaging;
 };
 
-export const areFriends = async (userId: number, friendId: number) => {
+export const areFriends = async (userId: string, friendId: string) => {
   try {
     const friendship = await prisma.friendship.findFirst({
       where: {
@@ -181,57 +178,12 @@ export const areFriends = async (userId: number, friendId: number) => {
     }
     return true;
   } catch (err) {
+    console.log(err);
     return false;
   }
 };
 
-export const getActiveFriendsUuids = async (userId: number) => {
-  const friendshipUuids = await prisma.friendship.findMany({
-    select: {
-      friend: {
-        select: {
-          uuid: true,
-          id: true,
-        },
-      },
-      user: {
-        select: {
-          uuid: true,
-          id: true,
-        },
-      },
-    },
-    where: {
-      OR: [
-        {
-          AND: [
-            { user_id: userId },
-            { friend: { user_status: { is_online: true } } },
-          ],
-        },
-        {
-          AND: [
-            { friend_id: userId },
-            { user: { user_status: { is_online: true } } },
-          ],
-        },
-      ],
-    },
-  });
-
-  const friendsUuids = friendshipUuids.map((f) =>
-    f.user.id === userId ? f.friend.uuid : f.user.uuid
-  );
-
-  return friendsUuids;
-};
-
-export const removeFriend = async (userId: number, friendUsername: string) => {
-  const friendData = await findUserDataFromUsername(friendUsername);
-  if (!friendData) {
-    throw new Error("No such user!");
-  }
-  const { id: friendId } = friendData;
+export const removeFriend = async (userId: string, friendId: string) => {
   await prisma.friendship.deleteMany({
     where: {
       OR: [

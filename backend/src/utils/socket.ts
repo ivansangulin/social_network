@@ -3,25 +3,21 @@ import { readFriendRequests } from "../services/FriendRequestService";
 import { createMessage, readMessages } from "../services/MessagingService";
 import { readNotifications } from "../services/NotificationService";
 import { createPost } from "../services/PostService";
-import { findUserUuidById, updateStatus } from "../services/UserService";
+import { updateStatus } from "../services/UserService";
 
 export const connectSocket = () => {
   io.on("connection", async (socket: ISocket) => {
-    const userId = Number(socket.userId);
+    const userId = socket.userId as string;
     console.log(`New client connected - ${userId}`);
-    const [userUuid] = await Promise.all([
-      findUserUuidById(userId),
-      updateStatus(userId, true),
-    ]);
-    socket.join(userUuid);
+    socket.join(userId);
 
     const messageListener = async (
       {
-        friendUuid,
+        friendId,
         message,
         created,
       }: {
-        friendUuid: string;
+        friendId: string;
         message: string;
         created: string;
       },
@@ -31,14 +27,14 @@ export const connectSocket = () => {
         const createdDate = new Date(created);
         const myData = await createMessage(
           userId,
-          friendUuid,
+          friendId,
           message,
           createdDate
         );
-        io.to(friendUuid).emit(
+        io.to(friendId).emit(
           "message",
           {
-            sender: userUuid,
+            sender: userId,
             message,
             time: createdDate.toLocaleTimeString([], {
               hour: "2-digit",
@@ -61,10 +57,10 @@ export const connectSocket = () => {
     ) => {
       try {
         const post = await createPost(userId, text);
-        io.to(userUuid).emit("newPost", post);
+        io.to(userId).emit("newPost", post);
       } catch (err) {
         console.log(err);
-        io.to(userUuid).emit("newPost", "Failed to create new post!");
+        io.to(userId).emit("newPost", "Failed to create new post!");
       } finally {
         if (ack) ack(true);
       }
@@ -72,29 +68,29 @@ export const connectSocket = () => {
     socket.on("newPost", postListener);
 
     const typingListener = async ({
-      friendUuid,
+      friendId,
       typing,
     }: {
-      friendUuid: string;
+      friendId: string;
       typing: boolean;
     }) => {
-      io.to(friendUuid).emit("userTyping", {
-        friendUuid: userUuid,
+      io.to(friendId).emit("userTyping", {
+        friendId: userId,
         typing: typing,
       });
     };
     socket.on("userTyping", typingListener);
 
     const readMessagesListener = async ({
-      friendUuid,
+      friendId,
       readAt,
     }: {
-      friendUuid: string;
+      friendId: string;
       readAt: string;
     }) => {
       try {
-        await readMessages(userId, friendUuid, new Date(readAt));
-        io.to(friendUuid).emit("readMessages", { friendUuid: userUuid });
+        await readMessages(userId, friendId, new Date(readAt));
+        io.to(friendId).emit("readMessages", { friendId: userId });
       } catch (err) {
         console.log(err);
       }
@@ -123,7 +119,7 @@ export const connectSocket = () => {
       await updateStatus(userId, false);
       console.log(`Client disconnected - ${userId}`);
       socket.removeAllListeners();
-      socket.leave(userUuid);
+      socket.leave(userId);
     });
   });
 };

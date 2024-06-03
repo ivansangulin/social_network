@@ -45,7 +45,7 @@ export default function Index() {
     <div className="grow flex">
       <Friends
         onNewChat={(friend) => {
-          if (chats.find((c) => c.friend.uuid === friend.uuid)) return;
+          if (chats.find((c) => c.friend.id === friend.id)) return;
           setChats((chats) => {
             return [
               { defaultOpen: true, notification: false, friend },
@@ -58,14 +58,14 @@ export default function Index() {
         <Posts />
         <Chats
           chats={chats}
-          onDeleteChat={(uuid) => {
+          onDeleteChat={(id) => {
             setChats((chats) => {
-              return [...chats.filter((c) => c.friend.uuid !== uuid)];
+              return [...chats.filter((c) => c.friend.id !== id)];
             });
           }}
-          setFirst={(uuid) => {
-            const el = chats.find((c) => c.friend.uuid === uuid)!;
-            setChats([el, ...chats.filter((c) => c.friend.uuid !== uuid)]);
+          setFirst={(id) => {
+            const el = chats.find((c) => c.friend.id === id)!;
+            setChats([el, ...chats.filter((c) => c.friend.id !== id)]);
           }}
           onNewChat={(friend) => {
             setChats((chats) => {
@@ -116,12 +116,12 @@ const ProfileData = ({
   );
 };
 
-type UserActivity = { uuid: string; status: boolean };
+type UserActivity = { id: string; status: boolean };
 
 const Friends = ({ onNewChat }: { onNewChat: (friend: Friend) => void }) => {
   const socket = useContext(SocketContext);
   const { friendsPaging, backendUrl } = useLoaderData<typeof loader>();
-  const [cursor, setCursor] = useState<number>(friendsPaging?.cursor ?? 0);
+  const [cursor, setCursor] = useState<string>(friendsPaging?.cursor ?? "");
   const [friends, setFriends] = useState<Friend[]>(
     friendsPaging?.friends ?? []
   );
@@ -137,7 +137,7 @@ const Friends = ({ onNewChat }: { onNewChat: (friend: Friend) => void }) => {
     if (socket) {
       const handleUserActivity = (activity: UserActivity) => {
         setFriends((friends) => {
-          const friend = friends.find((f) => f.uuid === activity.uuid);
+          const friend = friends.find((f) => f.id === activity.id);
           if (friend) {
             friend.user_status.is_online = activity.status;
             friend.user_status.last_seen = "Just now";
@@ -229,7 +229,7 @@ const Friends = ({ onNewChat }: { onNewChat: (friend: Friend) => void }) => {
             <div className="flex flex-col gap-4 min-w-full">
               {friends.map((friend) => (
                 <button
-                  key={friend.uuid}
+                  key={friend.id}
                   className="flex items-center justify-between rounded-md p-2 hover:bg-slate-100 text-left"
                   onClick={() => {
                     onNewChat(friend);
@@ -283,7 +283,7 @@ const Friends = ({ onNewChat }: { onNewChat: (friend: Friend) => void }) => {
 
 const Posts = () => {
   const { postsPaging, backendUrl } = useLoaderData<typeof loader>();
-  const cursor = useRef<number>(postsPaging?.cursor ?? 0);
+  const cursor = useRef<string>(postsPaging?.cursor ?? "");
   const [posts, setPosts] = useState<PostType[]>(postsPaging?.posts ?? []);
   const postContainerRef = useRef<HTMLDivElement>(null);
   const fetcher = useFetcher();
@@ -373,7 +373,7 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
 
   useEffect(() => {
     if (socket) {
-      const handleNewPost = (post: PostType | string) => {
+      const handleNewPost = ({ post }: { post: PostType | string }) => {
         if (typeof post !== "string" && textAreaRef.current) {
           onNewPost(post);
           setText("");

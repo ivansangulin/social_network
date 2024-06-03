@@ -9,11 +9,12 @@ const myDataSchema = z.object({
 const userDataSchema = z.object({
   areFriends: z.boolean(),
   user: z.object({
+    id: z.string(),
     username: z.string(),
     lockedProfile: z.boolean(),
     profilePictureUuid: z.string().nullish(),
   }),
-  friendRequestIsPending: z.boolean(),
+  friendRequestSenderId: z.string().nullish(),
 });
 
 export type MyData = z.infer<typeof myDataSchema>;

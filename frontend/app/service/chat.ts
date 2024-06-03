@@ -10,7 +10,7 @@ const messageSchema = z.object({
 
 const messagesPagingSchema = z.object({
   count: z.number(),
-  cursor: z.number(),
+  cursor: z.string(),
   lastMessageReadTime: z.string().nullable(),
   messages: z.array(messageSchema),
 });
@@ -19,7 +19,7 @@ export type Message = z.infer<typeof messageSchema>;
 export type MessagesPaging = z.infer<typeof messagesPagingSchema>;
 
 export const getMessages = async (
-  friendUuid: string,
+  friendId: string,
   cursor: string | null,
   request: Request
 ) => {
@@ -31,7 +31,7 @@ export const getMessages = async (
     const messagesResponse = await fetch(
       `${
         process.env.BACKEND_URL
-      }/messaging/messages?friendUuid=${friendUuid}&cursor=${cursor ?? ""}`,
+      }/messaging/messages?friendId=${friendId}&cursor=${cursor ?? ""}`,
       {
         method: "GET",
         headers: {

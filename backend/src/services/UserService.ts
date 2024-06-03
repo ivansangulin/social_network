@@ -1,6 +1,5 @@
 import { UserRegistrationType } from "../controllers/AuthController";
 import bcrypt from "bcrypt";
-import { randomUUID } from "crypto";
 import { prisma } from "../utils/client";
 
 const saltRounds = 5;
@@ -8,14 +7,21 @@ const saltRounds = 5;
 export const registerUser = async (userDto: UserRegistrationType) => {
   const hashedPassword: string = bcrypt.hashSync(userDto.password, saltRounds);
   userDto.password = hashedPassword;
-  const user = await prisma.user.create({
-    data: {
-      username: userDto.username,
-      email: userDto.email,
-      password: userDto.password,
-      locked_profile: true,
-      uuid: randomUUID(),
-    },
+  const user = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        username: userDto.username,
+        email: userDto.email,
+        password: userDto.password,
+        locked_profile: true,
+      },
+    });
+    await tx.userStatus.create({
+      data: {
+        user_id: user.id,
+      },
+    });
+    return user;
   });
   return user;
 };
@@ -49,7 +55,7 @@ export const findUserByUsernameOrEmail = async (auth: string) => {
   return user;
 };
 
-export const findMyself = async (id: number) => {
+export const findMyself = async (id: string) => {
   const user = await prisma.user.findFirstOrThrow({
     where: { id: id },
     select: { email: true, username: true, profile_picture_uuid: true },
@@ -57,35 +63,10 @@ export const findMyself = async (id: number) => {
   return user;
 };
 
-export const findUserUuidById = async (id: number) => {
-  const { uuid: userUuid } = await prisma.user.findFirstOrThrow({
-    select: {
-      uuid: true,
-    },
-    where: {
-      id: id,
-    },
-  });
-
-  return userUuid;
-};
-
-export const findFriendIdFromUuid = async (friendUuid: string) => {
-  const { id: friendId } = await prisma.user.findUniqueOrThrow({
-    select: {
-      id: true,
-    },
-    where: {
-      uuid: friendUuid,
-    },
-  });
-  return friendId;
-};
-
-export const myMessagingData = async (userId: number) => {
+export const myMessagingData = async (userId: string) => {
   const data = await prisma.user.findFirstOrThrow({
     select: {
-      uuid: true,
+      id: true,
       username: true,
       profile_picture_uuid: true,
       user_status: {
@@ -103,15 +84,19 @@ export const myMessagingData = async (userId: number) => {
   return data;
 };
 
-export const updateStatus = async (userId: number, status: boolean) => {
-  await prisma.userStatus.update({
-    data: {
-      is_online: status,
-    },
-    where: {
-      user_id: userId,
-    },
-  });
+export const updateStatus = async (userId: string, status: boolean) => {
+  try {
+    await prisma.userStatus.update({
+      data: {
+        is_online: status,
+      },
+      where: {
+        user_id: userId,
+      },
+    });
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 export const findUserDataFromUsername = async (username: string) => {

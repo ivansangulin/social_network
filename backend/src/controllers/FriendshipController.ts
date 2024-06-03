@@ -6,9 +6,11 @@ import { findUserDataFromUsername } from "../services/UserService";
 const friendshipRouter = Router();
 
 friendshipRouter.get("/my-friends", async (req: Request, res: Response) => {
-  const userId = Number(req.userId);
+  const userId = req.userId as string;
   const cursor =
-    typeof req.query.cursor === "string" ? Number(req.query.cursor) : undefined;
+    typeof req.query.cursor === "string"
+      ? (req.query.cursor as string)
+      : undefined;
   const search =
     typeof req.query.search === "string" ? req.query.search : undefined;
 
@@ -24,11 +26,11 @@ friendshipRouter.get(
   "/user-friends",
   check("username").isString().trim().notEmpty(),
   async (req: Request, res: Response) => {
-    const myId = Number(req.userId);
+    const myId = req.userId as string;
     const username = req.query.username as string;
     const cursor =
       typeof req.query.cursor === "string"
-        ? Number(req.query.cursor)
+        ? (req.query.cursor as string)
         : undefined;
     const search =
       typeof req.query.search === "string" ? req.query.search : undefined;

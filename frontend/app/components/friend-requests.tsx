@@ -29,15 +29,17 @@ export const FriendRequests = () => {
 
   useEffect(() => {
     const handleNewFriendRequest = ({
+      id,
       username,
       profile_picture_uuid,
     }: {
+      id: string;
       username: string;
       profile_picture_uuid: string;
     }) => {
       setFriendRequests((friendRequests) => {
         return [
-          { read: windowOpen, user: { username, profile_picture_uuid } },
+          { read: windowOpen, user: { id, username, profile_picture_uuid } },
           ...friendRequests,
         ];
       });
@@ -56,23 +58,25 @@ export const FriendRequests = () => {
     }: {
       friendUsername: string;
     }) => {
-      const friendRequest = friendRequests.find(
-        (fr) => fr.user.username === friendUsername
-      );
-      if (friendRequest) {
-        setFriendRequests((friendRequests) => {
+      setFriendRequests((friendRequests) => {
+        const friendRequest = friendRequests.find(
+          (fr) => fr.user.username === friendUsername
+        );
+        if (friendRequest) {
+          if (!friendRequest.read) {
+            setUnreadFriendRequestsCount((count) => {
+              return count - 1;
+            });
+          }
           return [
             ...friendRequests.filter(
               (fr) => fr.user.username !== friendUsername
             ),
           ];
-        });
-        if (friendRequest.read) {
-          setUnreadFriendRequestsCount((count) => {
-            return count - 1;
-          });
+        } else {
+          return friendRequests;
         }
-      }
+      });
     };
     socket?.on("canceledRequest", handleCanceledRequest);
 
@@ -106,14 +110,10 @@ export const FriendRequests = () => {
     });
   };
 
-  const handleFriendRequest = (username: string, accepted: boolean) => {
-    const friendRequest = friendRequests.find(
-      (fr) => fr.user.username === username
-    );
+  const handleFriendRequest = (id: string, accepted: boolean) => {
+    const friendRequest = friendRequests.find((fr) => fr.user.id === id);
     setFriendRequests((friendRequests) => {
-      return [
-        ...friendRequests.filter((req) => req.user.username !== username),
-      ];
+      return [...friendRequests.filter((req) => req.user.id !== id)];
     });
     fetch("/resource/friend-requests", {
       method: "POST",
@@ -122,7 +122,7 @@ export const FriendRequests = () => {
       },
       body: JSON.stringify({
         action: "handle",
-        friendUsername: username,
+        friendId: id,
         accepted: accepted,
       }),
     })
@@ -132,7 +132,7 @@ export const FriendRequests = () => {
           setFriendRequests((friendRequests) => {
             return [
               friendRequest,
-              ...friendRequests.filter((req) => req.user.username !== username),
+              ...friendRequests.filter((req) => req.user.id !== id),
             ];
           });
         }
@@ -142,7 +142,7 @@ export const FriendRequests = () => {
           setFriendRequests((friendRequests) => {
             return [
               friendRequest,
-              ...friendRequests.filter((req) => req.user.username !== username),
+              ...friendRequests.filter((req) => req.user.id !== id),
             ];
           });
         }
@@ -199,7 +199,7 @@ export const FriendRequests = () => {
                   <button
                     className="p-1 rounded-full hover:bg-stone-100"
                     onClick={() =>
-                      handleFriendRequest(request.user.username, true)
+                      handleFriendRequest(request.user.id, true)
                     }
                   >
                     <CheckIcon className="h-6 w-6 fill-green-500" />
@@ -207,7 +207,7 @@ export const FriendRequests = () => {
                   <button
                     className="p-1 rounded-full hover:bg-stone-100"
                     onClick={() =>
-                      handleFriendRequest(request.user.username, false)
+                      handleFriendRequest(request.user.id, false)
                     }
                   >
                     <XMarkIcon className="h-6 w-6 stroke-amber-600" />

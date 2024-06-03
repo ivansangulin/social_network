@@ -56,6 +56,7 @@ userRouter.post(
       res.cookie("session", tokenObj.token, tokenObj.cookieOptions);
       return res.status(200).send("Successfully registered!");
     } catch (err) {
+      console.log(err);
       return res.status(500).send("Couldn't create user!");
     }
   }
@@ -90,13 +91,14 @@ userRouter.post(
       res.cookie("session", tokenObj.token, tokenObj.cookieOptions);
       return res.status(200).send("Successfully logged in");
     } catch (err) {
+      console.log(err);
       return res.status(500).send("Error occured logging in");
     }
   }
 );
 
 userRouter.get("/me", RequiresAuth, async (req: Request, res: Response) => {
-  const userId = Number(req.userId);
+  const userId = req.userId;
   if (!userId) {
     return res.sendStatus(401);
   }
@@ -104,6 +106,7 @@ userRouter.get("/me", RequiresAuth, async (req: Request, res: Response) => {
     const user = await findMyself(userId);
     return res.status(200).json(user);
   } catch (err) {
+    console.log(err);
     return res.status(500).send("Error occured fetching data!");
   }
 });
@@ -114,25 +117,28 @@ userRouter.get(
   check("username").isString().trim().notEmpty(),
   Validate,
   async (req: Request, res: Response) => {
-    const myId = Number(req.userId);
+    const myId = req.userId as string;
     const username = req.query.username as string;
     try {
       const userData = await findUserDataFromUsername(username);
       if (!userData) {
         return res.status(404).send("User not found!");
       }
-      const [friends, friendRequestIsPending] = await Promise.all([
+      const [friends, friendRequest] = await Promise.all([
         areFriends(myId, userData.id),
         isFriendRequestPending(myId, userData.id),
       ]);
       return res.status(200).send({
         areFriends: friends,
         user: {
+          id: userData.id,
           username: username,
           lockedProfile: userData.locked_profile,
           profilePictureUuid: userData.profile_picture_uuid,
         },
-        friendRequestIsPending: !!friendRequestIsPending,
+        friendRequestSenderId: friendRequest
+          ? friendRequest.from_user_id
+          : undefined,
       });
     } catch (err) {
       console.log(err);

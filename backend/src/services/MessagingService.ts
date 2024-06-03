@@ -1,9 +1,5 @@
 import { areFriends } from "./FriendshipService";
-import {
-  findUserUuidById,
-  findFriendIdFromUuid,
-  myMessagingData,
-} from "./UserService";
+import { myMessagingData } from "./UserService";
 import {
   differenceInDays,
   differenceInHours,
@@ -16,13 +12,11 @@ import { prisma } from "../utils/client";
 const MESSAGES_PAGING_TAKE = 20;
 
 export const createMessage = async (
-  userId: number,
-  friendUuid: string,
+  userId: string,
+  friendId: string,
   message: string,
   created: Date
 ) => {
-  const friendId = await findFriendIdFromUuid(friendUuid);
-
   const friends = await areFriends(userId, friendId);
   if (!friends) {
     throw new Error("Not friends..");
@@ -45,18 +39,16 @@ export const createMessage = async (
 };
 
 export const getMessages = async (
-  userId: number,
-  friendUuid: string,
-  cursor: number | undefined
+  userId: string,
+  friendId: string,
+  cursor: string | undefined
 ) => {
-  const friendId = await findFriendIdFromUuid(friendUuid);
-
   const friends = await areFriends(userId, friendId);
   if (!friends) {
     throw new Error("Not friends!");
   }
 
-  const [count, messages, lastMessageReadTime, userUuid] = await Promise.all([
+  const [count, messages, lastMessageReadTime] = await Promise.all([
     prisma.message.count({
       where: {
         OR: [
@@ -97,14 +89,13 @@ export const getMessages = async (
       },
       orderBy: { created: "desc" },
     }),
-    findUserUuidById(userId),
   ]);
 
   const messagesMapped: { sender: string; message: string; time: string }[] =
     messages.map((msg) => {
       if (msg.from_user_id === userId) {
         return {
-          sender: userUuid,
+          sender: userId,
           message: msg.message,
           time: msg.created.toLocaleTimeString([], {
             hour: "2-digit",
@@ -113,7 +104,7 @@ export const getMessages = async (
         };
       }
       return {
-        sender: friendUuid,
+        sender: friendId,
         message: msg.message,
         time: msg.created.toLocaleTimeString([], {
           hour: "2-digit",
@@ -130,7 +121,7 @@ export const getMessages = async (
       lastMessageReadTime.from_user_id === userId
         ? calculateLastSeen(lastMessageReadTime.read_at)
         : null,
-    cursor: messages.length > 0 ? messages[messages.length - 1].id : 0,
+    cursor: messages.length > 0 ? messages[messages.length - 1].id : "",
   };
 
   return messagesPaging;
@@ -160,12 +151,10 @@ const calculateLastSeen = (last_active: Date) => {
 };
 
 export const readMessages = async (
-  userId: number,
-  friendUuid: string,
+  userId: string,
+  friendId: string,
   readAt: Date
 ) => {
-  const friendId = await findFriendIdFromUuid(friendUuid);
-
   const friends = await areFriends(userId, friendId);
   if (!friends) {
     throw new Error("Not friends!");
@@ -178,7 +167,7 @@ export const readMessages = async (
     where: {
       from_user_id: friendId,
       to_user_id: userId,
-      read_at: null,
+      OR: [{ read_at: null }, { read_at: { isSet: false } }],
     },
   });
 };

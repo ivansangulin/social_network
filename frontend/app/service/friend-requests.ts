@@ -4,6 +4,7 @@ import { getCookie } from "./user";
 const friendRequestSchema = z.object({
   read: z.boolean(),
   user: z.object({
+    id: z.string(),
     username: z.string(),
     profile_picture_uuid: z.string().nullish(),
   }),
@@ -42,7 +43,7 @@ export const getPendingFriendRequests = async (request: Request) => {
   }
 };
 
-export const addFriend = async (request: Request, friendUsername: string) => {
+export const addFriend = async (request: Request, friendId: string) => {
   try {
     const cookie = getCookie(request);
     if (!cookie) {
@@ -56,7 +57,7 @@ export const addFriend = async (request: Request, friendUsername: string) => {
           Cookie: cookie,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ friendUsername: friendUsername }),
+        body: JSON.stringify({ friendId }),
       }
     );
     if (!addFriendResponse.ok) {
@@ -70,10 +71,7 @@ export const addFriend = async (request: Request, friendUsername: string) => {
   }
 };
 
-export const removeFriend = async (
-  request: Request,
-  friendUsername: string
-) => {
+export const removeFriend = async (request: Request, friendId: string) => {
   try {
     const cookie = getCookie(request);
     if (!cookie) {
@@ -87,7 +85,7 @@ export const removeFriend = async (
           Cookie: cookie,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ friendUsername }),
+        body: JSON.stringify({ friendId }),
       }
     );
     if (!removeFriendResponse.ok) {
@@ -102,7 +100,7 @@ export const removeFriend = async (
 
 export const handleFriendRequest = async (
   request: Request,
-  friendUsername: string,
+  friendId: string,
   accepted: boolean
 ) => {
   try {
@@ -118,10 +116,11 @@ export const handleFriendRequest = async (
           Cookie: cookie,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ friendUsername, accepted }),
+        body: JSON.stringify({ friendId, accepted }),
       }
     );
     if (!handleFriendRequestResponse.ok) {
+      console.log(handleFriendRequestResponse);
       return false;
     }
     return true;

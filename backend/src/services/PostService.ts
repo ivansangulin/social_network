@@ -5,6 +5,7 @@ import {
   isYesterday,
 } from "date-fns";
 import { prisma } from "../utils/client";
+import { createNotification } from "./NotificationService";
 
 export const calculateTime = (postDate: Date) => {
   const now = new Date();
@@ -31,8 +32,8 @@ export const calculateTime = (postDate: Date) => {
 const POST_PAGING_TAKE = 8;
 
 export const getUserPosts = async (
-  userId: number,
-  cursor: number | undefined
+  userId: string,
+  cursor: string | undefined
 ) => {
   const [count, posts] = await Promise.all([
     prisma.post.count({ where: { user_id: userId } }),
@@ -80,13 +81,13 @@ export const getUserPosts = async (
   const userPostPaging = {
     count,
     posts: mappedPosts,
-    cursor: posts.length > 0 ? posts[posts.length - 1].id : 0,
+    cursor: posts.length > 0 ? posts[posts.length - 1].id : "",
   };
 
   return userPostPaging;
 };
 
-export const createPost = async (userId: number, text: string) => {
+export const createPost = async (userId: string, text: string) => {
   const post = await prisma.post.create({
     data: {
       user_id: userId,
@@ -123,8 +124,8 @@ export const createPost = async (userId: number, text: string) => {
 };
 
 export const getMainPagePosts = async (
-  userId: number,
-  cursor: number | undefined
+  userId: string,
+  cursor: string | undefined
 ) => {
   const friendships = await prisma.friendship.findMany({
     where: {
@@ -191,19 +192,16 @@ export const getMainPagePosts = async (
   const userPostPaging = {
     count,
     posts: mappedPosts,
-    cursor: posts.length > 0 ? posts[posts.length - 1].id : 0,
+    cursor: posts.length > 0 ? posts[posts.length - 1].id : "",
   };
 
   return userPostPaging;
 };
 
-export const likePost = async (userId: number, postId: number) => {
+export const likePost = async (userId: string, postId: string) => {
   const {
     user: { username },
-    post: {
-      user_id: friendId,
-      user: { uuid: friendUuid },
-    },
+    post: { user_id: friendId },
   } = await prisma.like.create({
     data: {
       post_id: postId,
@@ -218,19 +216,21 @@ export const likePost = async (userId: number, postId: number) => {
       post: {
         select: {
           user_id: true,
-          user: {
-            select: {
-              uuid: true,
-            },
-          },
         },
       },
     },
   });
-  return { username, friendId, friendUuid };
+  if (userId !== friendId) {
+    await createNotification(
+      friendId,
+      postId,
+      `${username} has liked your post!`,
+      userId
+    );
+  }
 };
 
-export const dislikePost = async (userId: number, postId: number) => {
+export const dislikePost = async (userId: string, postId: string) => {
   await prisma.like.deleteMany({
     where: {
       post_id: postId,

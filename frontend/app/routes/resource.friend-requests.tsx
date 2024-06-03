@@ -23,21 +23,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const actionSchema = z.object({
   action: z.enum(["add", "remove", "handle"]),
-  friendUsername: z.string(),
+  friendId: z.string(),
 });
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const json = await JSON.parse(await request.text());
-    const { action, friendUsername } = await actionSchema.parse(json);
+    const { action, friendId } = await actionSchema.parse(json);
     if (!action) return false;
     if (action === "add") {
-      return addFriend(request, friendUsername);
+      return addFriend(request, friendId);
     } else if (action === "remove") {
-      return removeFriend(request, friendUsername);
+      return removeFriend(request, friendId);
     } else {
       const accepted = await z.boolean().parse(json.accepted);
-      return handleFriendRequest(request, friendUsername, accepted);
+      return handleFriendRequest(request, friendId, accepted);
     }
   } catch (err) {
     console.log(err);

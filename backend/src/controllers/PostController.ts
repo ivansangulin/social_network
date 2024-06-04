@@ -4,6 +4,7 @@ import {
   getUserPosts,
   likePost,
   dislikePost,
+  getPost,
 } from "../services/PostService";
 import { check } from "express-validator";
 import Validate from "../middleware/validate";
@@ -92,6 +93,32 @@ postRouter.post(
     } catch (err) {
       console.log(err);
       return res.status(500).send("Couldn't like/unlike a post!");
+    }
+  }
+);
+
+postRouter.get(
+  "/",
+  check("postId").isString().trim().notEmpty(),
+  Validate,
+  async (req, res) => {
+    const myId = req.userId as string;
+    const postId = req.query.postId as string;
+    try {
+      const post = await getPost(myId, postId);
+      if (post.user_id === myId) {
+        return res.status(200).json(post);
+      }
+      const friends = await areFriends(myId, post.user_id);
+      if (friends || !post.user.locked_profile) {
+        return res.status(200).json(post);
+      }
+      return res
+        .status(403)
+        .send("You are not allowed to view this person's profile");
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Couldn't fetch post!");
     }
   }
 );

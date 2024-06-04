@@ -140,3 +140,29 @@ export const likePost = async (
     return true;
   }
 };
+
+export const getPost = async (request: Request, postId: string) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return null;
+    }
+    const postResponse = await fetch(
+      `${process.env.BACKEND_URL}/post?postId=${postId}`,
+      {
+        method: "GET",
+        headers: {
+          Cookie: cookie,
+        },
+      }
+    );
+    if (!postResponse.ok) {
+      return null;
+    }
+    const post = await postSchema.parse(await postResponse.json());
+    return post;
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
+};

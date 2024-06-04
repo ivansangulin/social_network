@@ -35,7 +35,7 @@ export default () => {
   );
 
   const search = useRef<string>("");
-  const cursor = useRef<number>(friendsPaging?.cursor ?? 0);
+  const cursor = useRef<string>(friendsPaging?.cursor ?? "");
   const fetching = useRef<boolean>(false);
   const hasMore = useRef<boolean>(
     friends.length !== (friendsPaging?.count ?? 0)

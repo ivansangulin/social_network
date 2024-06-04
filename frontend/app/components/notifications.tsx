@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { BellIcon } from "./icons";
 import { SocketContext } from "~/root";
-import { useFetcher } from "@remix-run/react";
+import { Link, useFetcher, useNavigation } from "@remix-run/react";
 import { NotificationData, NotificationType } from "~/service/notifications";
 import { useServerUrl } from "~/hooks/useServerUrl";
 
@@ -12,6 +12,7 @@ export const Notifications = () => {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const fetcher = useFetcher();
   const backendUrl = useServerUrl();
+  const navigation = useNavigation();
 
   useEffect(() => {
     fetcher.load("/resource/notifications");
@@ -53,8 +54,12 @@ export const Notifications = () => {
     };
   }, [socket]);
 
+  useEffect(() => {
+    setWindowOpen(false);
+  }, [navigation.state]);
+
   const onWindowOpen = () => {
-    if (!windowOpen) {
+    if (!windowOpen && unreadCount > 0) {
       setUnreadCount(0);
       socket?.emit("readNotifications");
     }
@@ -74,20 +79,20 @@ export const Notifications = () => {
         />
         {unreadCount > 0 && (
           <div className="font-bold text-sm rounded-md px-1 h-fit bg-red-500 text-white absolute top-1/2 left-3/4">
-            {unreadCount}
+            {unreadCount > 99 ? "99+" : unreadCount}
           </div>
         )}
       </button>
       {windowOpen && (
         <div
           className={`flex flex-col rounded-md absolute top-full right-0 min-w-[28rem] ${
-            notifications.length > 2 ? "h-[9rem]" : "h-fit"
+            notifications.length > 4 ? "h-[20rem]" : "h-fit"
           } bg-white border-black overflow-y-auto scrollbar-thin`}
         >
           {notifications.length > 0 ? (
-            notifications.map((notification, idx) => (
+            notifications.map((notification) => (
               <div
-                className={`py-4 px-2 flex justify-between items-center ${idx % 2 !== 0 && "bg-secondary"}`}
+                className="py-4 px-2 flex space-x-2 justify-between items-center border-y border-secondary"
                 key={notification.id}
               >
                 <div className="flex items-center space-x-2">
@@ -104,8 +109,27 @@ export const Notifications = () => {
                       className="max-w-[40px]"
                     />
                   )}
-                  <div className="">{notification.message}</div>
+                  <div className="flex flex-col">
+                    <div className="">
+                      <Link
+                        to={`/profile/${notification.sender.username}/posts`}
+                        className="font-bold hover:underline break-words"
+                      >
+                        {notification.sender.username}{" "}
+                      </Link>
+                      {notification.message}
+                    </div>
+                    <div className="">{notification.createdDescriptive}</div>
+                  </div>
                 </div>
+                {notification.post_id && (
+                  <Link
+                    to={`/post/${notification.post_id}`}
+                    className="self-end text-sky-600 hover:underline"
+                  >
+                    View post
+                  </Link>
+                )}
               </div>
             ))
           ) : (

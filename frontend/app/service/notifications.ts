@@ -4,7 +4,7 @@ import { getCookie } from "./user";
 const notificationSchema = z.object({
   id: z.string(),
   message: z.string(),
-  created: z.string(),
+  createdDescriptive: z.string(),
   post_id: z.string().nullish(),
   read: z.boolean(),
   sender: z.object({

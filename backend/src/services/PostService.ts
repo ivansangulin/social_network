@@ -1,33 +1,5 @@
-import {
-  differenceInDays,
-  differenceInHours,
-  differenceInMinutes,
-  isYesterday,
-} from "date-fns";
 import { prisma } from "../utils/client";
 import { createNotification } from "./NotificationService";
-
-export const calculateTime = (postDate: Date) => {
-  const now = new Date();
-
-  const diffHours = differenceInHours(now, postDate);
-  const diffMinutes = differenceInMinutes(now, postDate);
-  const diffDays = differenceInDays(now, postDate);
-
-  if (diffMinutes < 1) {
-    return "Just now";
-  } else if (diffMinutes < 60) {
-    return `${diffMinutes} minute${diffMinutes !== 1 && "s"} ago`;
-  } else if (diffHours < 24) {
-    return `${diffHours} hour${diffHours !== 1 && "s"} ago`;
-  } else if (isYesterday(postDate)) {
-    return "Yesterday";
-  } else if (diffDays < 7) {
-    return `${diffDays} day${diffDays !== 1 && "s"} ago`;
-  } else {
-    return postDate.toLocaleDateString();
-  }
-};
 
 const POST_PAGING_TAKE = 8;
 
@@ -200,7 +172,6 @@ export const getMainPagePosts = async (
 
 export const likePost = async (userId: string, postId: string) => {
   const {
-    user: { username },
     post: { user_id: friendId },
   } = await prisma.like.create({
     data: {
@@ -208,11 +179,6 @@ export const likePost = async (userId: string, postId: string) => {
       user_id: userId,
     },
     select: {
-      user: {
-        select: {
-          username: true,
-        },
-      },
       post: {
         select: {
           user_id: true,
@@ -221,12 +187,7 @@ export const likePost = async (userId: string, postId: string) => {
     },
   });
   if (userId !== friendId) {
-    await createNotification(
-      friendId,
-      postId,
-      `${username} has liked your post!`,
-      userId
-    );
+    await createNotification(friendId, postId, `has liked your post!`, userId);
   }
 };
 
@@ -237,4 +198,42 @@ export const dislikePost = async (userId: string, postId: string) => {
       user_id: userId,
     },
   });
+};
+
+export const getPost = async (userId: string, postId: string) => {
+  const post = await prisma.post.findUniqueOrThrow({
+    select: {
+      id: true,
+      createdLocalDate: true,
+      text: true,
+      user_id: true,
+      _count: {
+        select: {
+          likes: true,
+          comments: true,
+        },
+      },
+      user: {
+        select: {
+          profile_picture_uuid: true,
+          username: true,
+          locked_profile: true,
+        },
+      },
+      likes: {
+        where: {
+          user_id: userId,
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
+    where: {
+      id: postId,
+    },
+  });
+
+  const { likes, ...props } = post;
+  return { liked: likes.length > 0, ...props };
 };

@@ -1,35 +1,4 @@
-import {
-  differenceInDays,
-  differenceInHours,
-  differenceInMinutes,
-  differenceInMonths,
-  differenceInYears,
-} from "date-fns";
 import { prisma } from "../utils/client";
-import { findUserDataFromUsername } from "./UserService";
-
-export const calculateAwayTime = (last_active: Date) => {
-  const now = new Date();
-  const diffYears = differenceInYears(now, last_active);
-  const diffMonths = differenceInMonths(now, last_active);
-  const diffDays = differenceInDays(now, last_active);
-  const diffHours = differenceInHours(now, last_active);
-  const diffMinutes = differenceInMinutes(now, last_active);
-
-  if (diffMinutes < 1) {
-    return "Just now";
-  } else if (diffMinutes < 60) {
-    return `${diffMinutes}min`;
-  } else if (diffHours < 24) {
-    return `${diffHours}h`;
-  } else if (diffDays < 31) {
-    return `${diffDays}d`;
-  } else if (diffMonths < 12) {
-    return `${diffMonths}mth`;
-  } else {
-    return `${diffYears}y`;
-  }
-};
 
 const FRIENDS_PAGING_TAKE = 20;
 

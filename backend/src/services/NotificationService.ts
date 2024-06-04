@@ -1,4 +1,4 @@
-import { subWeeks } from "date-fns";
+import { subMinutes, subWeeks } from "date-fns";
 import { prisma } from "../utils/client";
 import { io } from "../app";
 
@@ -8,7 +8,23 @@ export const createNotification = async (
   message: string,
   senderId: string
 ) => {
-  //TODO debounce
+  if (postId && message.includes("like")) {
+    const lastFiveMinutes = subMinutes(new Date(), 5);
+    const prevNotification = await prisma.notification.findFirst({
+      where: {
+        user_id: userId,
+        post_id: postId,
+        message: message,
+        sender_id: senderId,
+        created: {
+          gte: lastFiveMinutes,
+        },
+      },
+    });
+    if (prevNotification) {
+      return;
+    }
+  }
   const notification = await prisma.notification.create({
     data: {
       user_id: userId,
@@ -18,7 +34,7 @@ export const createNotification = async (
     },
     select: {
       id: true,
-      created: true,
+      createdDescriptive: true,
       message: true,
       post_id: true,
       read: true,
@@ -39,7 +55,7 @@ export const findMyNotifications = async (userId: string) => {
     prisma.notification.findMany({
       select: {
         id: true,
-        created: true,
+        createdDescriptive: true,
         message: true,
         post_id: true,
         read: true,

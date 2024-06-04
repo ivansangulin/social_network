@@ -1,16 +1,12 @@
 import { Post as PostType } from "~/service/post";
 import { HeartIcon, CommentIcon } from "./icons";
 import { FormEvent, useState } from "react";
+import { useServerUrl } from "~/hooks/useServerUrl";
 
-export const Post = ({
-  post,
-  backendUrl,
-}: {
-  post: PostType;
-  backendUrl: string | undefined;
-}) => {
+export const Post = ({ post }: { post: PostType }) => {
   const [liked, setLiked] = useState<boolean>(post.liked);
   const [likeCount, setLikeCount] = useState<number>(post._count.likes);
+  const backendUrl = useServerUrl();
 
   const onLike = (e: FormEvent<HTMLButtonElement>) => {
     !liked
@@ -54,7 +50,7 @@ export const Post = ({
   };
 
   return (
-    <div className="flex flex-col space-y-4 p-2 border border-slate-300 rounded-lg bg-white">
+    <div className="flex flex-col space-y-4 p-4 border border-slate-300 rounded-lg bg-white">
       <div className="flex flex-col space-y-0.5">
         <div className="flex items-center space-x-2">
           {post.user.profile_picture_uuid && backendUrl ? (

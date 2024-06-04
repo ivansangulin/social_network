@@ -24,15 +24,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   }
   return json({
     userPostsPaging,
-    backendUrl: process.env.BACKEND_URL,
     user,
   });
 };
 
 export default () => {
-  const { backendUrl, userPostsPaging, user } = useLoaderData<typeof loader>();
+  const { userPostsPaging, user } = useLoaderData<typeof loader>();
   const [posts, setPosts] = useState<PostType[]>(userPostsPaging?.posts ?? []);
-  const cursor = useRef<number>(userPostsPaging?.cursor ?? 0);
+  const cursor = useRef<string>(userPostsPaging?.cursor ?? "");
   const fetching = useRef<boolean>(false);
   const hasMore = useRef<boolean>(
     posts.length !== (userPostsPaging?.count ?? 0)
@@ -85,7 +84,7 @@ export default () => {
         posts.length > 0 ? (
           <div className="flex flex-col space-y-12 max-h-[100%]">
             {posts.map((post) => (
-              <Post key={post.id} post={post} backendUrl={backendUrl} />
+              <Post key={post.id} post={post} />
             ))}
           </div>
         ) : (

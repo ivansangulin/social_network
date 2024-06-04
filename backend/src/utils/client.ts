@@ -1,6 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { calculateAwayTime } from "../services/FriendshipService";
-import { calculateTime } from "../services/PostService";
+import { calculateAwayTime, calculateTime } from "./time";
 
 export const prisma = new PrismaClient().$extends({
   result: {
@@ -14,6 +13,14 @@ export const prisma = new PrismaClient().$extends({
     },
     post: {
       createdLocalDate: {
+        needs: { created: true },
+        compute(data) {
+          return calculateTime(data.created);
+        },
+      },
+    },
+    notification: {
+      createdDescriptive: {
         needs: { created: true },
         compute(data) {
           return calculateTime(data.created);

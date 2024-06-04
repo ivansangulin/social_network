@@ -282,7 +282,7 @@ const Friends = ({ onNewChat }: { onNewChat: (friend: Friend) => void }) => {
 };
 
 const Posts = () => {
-  const { postsPaging, backendUrl } = useLoaderData<typeof loader>();
+  const { postsPaging } = useLoaderData<typeof loader>();
   const cursor = useRef<string>(postsPaging?.cursor ?? "");
   const [posts, setPosts] = useState<PostType[]>(postsPaging?.posts ?? []);
   const postContainerRef = useRef<HTMLDivElement>(null);
@@ -346,7 +346,7 @@ const Posts = () => {
           posts.length > 0 && (
             <div className="flex flex-col space-y-12">
               {posts.map((post) => (
-                <Post key={post.id} post={post} backendUrl={backendUrl} />
+                <Post key={post.id} post={post} />
               ))}
             </div>
           )

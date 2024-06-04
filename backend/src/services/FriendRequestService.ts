@@ -81,7 +81,7 @@ export const acceptFriendRequest = async (userId: string, friendId: string) => {
   await createNotification(
     friendId,
     undefined,
-    `${username} has accepted your friend request!`,
+    `has accepted your friend request!`,
     userId
   );
 };

@@ -36,10 +36,7 @@ export const connectSocket = () => {
           {
             sender: userId,
             message,
-            time: createdDate.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
+            created,
           },
           myData
         );

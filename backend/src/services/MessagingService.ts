@@ -91,25 +91,19 @@ export const getMessages = async (
     }),
   ]);
 
-  const messagesMapped: { sender: string; message: string; time: string }[] =
+  const messagesMapped: { sender: string; message: string; created: Date }[] =
     messages.map((msg) => {
       if (msg.from_user_id === userId) {
         return {
           sender: userId,
           message: msg.message,
-          time: msg.created.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          created: msg.created,
         };
       }
       return {
         sender: friendId,
         message: msg.message,
-        time: msg.created.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+        created: msg.created,
       };
     });
 

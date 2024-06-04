@@ -22,6 +22,7 @@ import {
 } from "./icons";
 import { ChatData } from "~/routes/_index";
 import { Friend } from "~/service/friendship";
+import { differenceInCalendarDays, format } from "date-fns";
 
 interface NewMessageHandle {
   receiveMessage: (message: Message) => void;
@@ -313,9 +314,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
         );
       }
     };
-    messageFetcher.load(
-      `/resource/get-messages?friendId=${props.friend.id}`
-    );
+    messageFetcher.load(`/resource/get-messages?friendId=${props.friend.id}`);
     const messageRefCurrent = messageContainerRef.current;
     if (messageRefCurrent) {
       messageRefCurrent.addEventListener("scroll", handleScroll);
@@ -379,11 +378,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
         {
           sender: `${tempKey}`,
           message: textAreaValue,
-          time: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          }),
+          created: new Date().toISOString(),
         },
         ...messages,
       ];
@@ -489,24 +484,68 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
             {lastMessageSeenTime && (
               <div className="self-end text-xs">{lastMessageSeenTime}</div>
             )}
-            {messages.map((msg, index) => (
-              <div
-                className={`max-w-[80%] flex items-center space-x-2 rounded-md p-2 ${
-                  msg.sender === props.friend.id
-                    ? "self-start bg-zinc-600"
-                    : "self-end bg-primary"
-                }`}
-                key={index}
-              >
-                <div className="text-white text-sm break-words overflow-hidden">
-                  {msg.message}
+            {messages.map((msg, index) => {
+              const message = (
+                <div
+                  className={`max-w-[80%] flex items-center space-x-2 rounded-md p-2 ${
+                    msg.sender === props.friend.id
+                      ? "self-start bg-zinc-600"
+                      : "self-end bg-primary"
+                  }`}
+                  key={index}
+                >
+                  <div className="text-white text-sm break-words overflow-hidden">
+                    {msg.message}
+                  </div>
+                  <div className="flex self-end mt-2 *:stroke-white">
+                    <div className="text-white text-xs">
+                      {new Date(msg.created).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      })}
+                    </div>
+                    {!!msg.error && <ExclamationTriangle className="h-4 w-4" />}
+                  </div>
                 </div>
-                <div className="flex self-end mt-2 *:stroke-white">
-                  <div className="text-white text-xs">{msg.time}</div>
-                  {!!msg.error && <ExclamationTriangle className="h-4 w-4" />}
-                </div>
-              </div>
-            ))}
+              );
+              const diff =
+                index + 1 !== messages.length
+                  ? differenceInCalendarDays(
+                      msg.created,
+                      messages[index + 1].created
+                    )
+                  : differenceInCalendarDays(new Date(), msg.created) + 1;
+              if (diff > 0) {
+                const newBlockOfMessagesDate =
+                  diff > 7
+                    ? format(
+                        new Date(msg.created).toLocaleDateString(),
+                        "dd-MM-yyyy"
+                      )
+                    : diff === 1
+                    ? "Today"
+                    : diff === 2
+                    ? "Yesterday"
+                    : format(
+                        new Date(msg.created).toLocaleDateString(),
+                        "EEEE"
+                      );
+                return (
+                  <div className="flex flex-col" key={index}>
+                    <div
+                      className={`self-center py-1 px-2 text-xs bg-slate-200 rounded-lg ${
+                        index + 1 !== messages.length ? "!my-2" : "!mb-2"
+                      }`}
+                    >
+                      {newBlockOfMessagesDate}
+                    </div>
+                    {message}
+                  </div>
+                );
+              }
+              return message;
+            })}
           </div>
           <div className="border-t border-black flex justify-between p-2 bg-white">
             <textarea

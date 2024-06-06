@@ -20,8 +20,10 @@ model User {
   user_status          UserStatus?
   friendRequestFrom    FriendRequest[] @relation("fromUser")
   friendRequestTo      FriendRequest[] @relation("toUser")
-  Like                 Like[]
+  Like                 PostLike[]
   Notification         Notification[]
+  Comment              Comment[]
+  CommentLike          CommentLike[]
 
   @@map("users")
 }
@@ -37,34 +39,39 @@ model Friendship {
 }
 
 model Post {
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  id       String     @id @default(auto()) @map("_id") @db.ObjectId
   text     String
-  created  DateTime  @default(now())
-  user_id  String    @db.ObjectId
-  user     User      @relation(fields: [user_id], references: [id])
-  likes    Like[]
+  created  DateTime   @default(now())
+  user_id  String     @db.ObjectId
+  user     User       @relation(fields: [user_id], references: [id])
+  likes    PostLike[]
   comments Comment[]
 
   @@map("posts")
 }
 
-model Like {
+model PostLike {
   id      String @id @default(auto()) @map("_id") @db.ObjectId
   post_id String @db.ObjectId
   post    Post   @relation(fields: [post_id], references: [id])
   user_id String @db.ObjectId
   user    User   @relation(fields: [user_id], references: [id])
 
-  @@map("likes")
+  @@map("post_likes")
 }
 
 model Comment {
-  id      String   @id @default(auto()) @map("_id") @db.ObjectId
-  user_id String   @db.ObjectId
-  post_id String   @db.ObjectId
-  post    Post     @relation(fields: [post_id], references: [id])
-  text    String
-  created DateTime @default(now()) @db.Date()
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  user_id   String        @db.ObjectId
+  user      User          @relation(fields: [user_id], references: [id])
+  post_id   String        @db.ObjectId
+  post      Post          @relation(fields: [post_id], references: [id])
+  text      String
+  created   DateTime      @default(now()) @db.Date()
+  parent_id String?        @db.ObjectId
+  parent    Comment?       @relation(name: "replies", fields: [parent_id], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  replies   Comment[]     @relation(name: "replies")
+  likes     CommentLike[]
 
   @@map("comments")
 }
@@ -113,4 +120,14 @@ model Notification {
   sender    User     @relation(fields: [sender_id], references: [id])
 
   @@map("notifications")
+}
+
+model CommentLike {
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  comment_id String  @db.ObjectId
+  comment    Comment @relation(fields: [comment_id], references: [id])
+  user_id    String  @db.ObjectId
+  user       User    @relation(fields: [user_id], references: [id])
+
+  @@map("comment_likes")
 }

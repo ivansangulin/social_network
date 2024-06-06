@@ -8,7 +8,7 @@ export const createNotification = async (
   message: string,
   senderId: string
 ) => {
-  if (postId && message.includes("like")) {
+  if (postId && (message.includes("like") || message.includes("comment"))) {
     const lastFiveMinutes = subMinutes(new Date(), 5);
     const prevNotification = await prisma.notification.findFirst({
       where: {

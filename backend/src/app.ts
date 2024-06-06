@@ -12,6 +12,7 @@ import messagingRouter from "./controllers/MessagingController";
 import { connectSocket } from "./utils/socket";
 import friendRequestRouter from "./controllers/FriendRequestController";
 import notificationRouter from "./controllers/NotificationController";
+import commentRouter from "./controllers/CommentController";
 
 declare global {
   namespace Express {
@@ -39,6 +40,7 @@ app.use("/post", RequiresAuth, postRouter);
 app.use("/messaging", RequiresAuth, messagingRouter);
 app.use("/friend-request", RequiresAuth, friendRequestRouter);
 app.use("/notification", RequiresAuth, notificationRouter);
+app.use("/comment", RequiresAuth, commentRouter);
 
 const server = http.createServer(app);
 export const io = new Server(server, {

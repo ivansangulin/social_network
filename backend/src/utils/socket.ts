@@ -8,6 +8,7 @@ import { updateStatus } from "../services/UserService";
 export const connectSocket = () => {
   io.on("connection", async (socket: ISocket) => {
     const userId = socket.userId as string;
+    await updateStatus(userId, true);
     console.log(`New client connected - ${userId}`);
     socket.join(userId);
 

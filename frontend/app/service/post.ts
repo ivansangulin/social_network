@@ -1,6 +1,48 @@
 import { z } from "zod";
 import { getCookie } from "./user";
 
+const commentSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  createdDescriptive: z.string(),
+  parent_id: z.string().optional(),
+  user: z.object({
+    username: z.string(),
+    profile_picture_uuid: z.string().nullish(),
+  }),
+  _count: z.object({
+    likes: z.number(),
+  }),
+  liked: z.boolean(),
+  replies: z
+    .array(
+      z
+        .object({
+          id: z.string(),
+          text: z.string(),
+          createdDescriptive: z.string(),
+          parent_id: z.string().optional(),
+          user: z.object({
+            username: z.string(),
+            profile_picture_uuid: z.string().nullish(),
+          }),
+          _count: z.object({
+            likes: z.number(),
+          }),
+          likes: z.array(
+            z.object({
+              id: z.string(),
+            })
+          ),
+        })
+        .transform(({ likes, ...props }) => ({
+          liked: likes.length > 0,
+          ...props,
+        }))
+    )
+    .nullish(),
+});
+
 const postSchema = z.object({
   id: z.string(),
   createdLocalDate: z.string(),
@@ -14,6 +56,7 @@ const postSchema = z.object({
     profile_picture_uuid: z.string().nullish(),
   }),
   liked: z.boolean(),
+  comments: z.array(commentSchema),
 });
 
 const postPagingSchema = z.object({
@@ -24,6 +67,7 @@ const postPagingSchema = z.object({
 
 export type Post = z.infer<typeof postSchema>;
 export type PostPaging = z.infer<typeof postPagingSchema>;
+export type CommentType = z.infer<typeof commentSchema>;
 
 export const getMyPosts = async (request: Request, cursor: string | null) => {
   const cookie = getCookie(request);

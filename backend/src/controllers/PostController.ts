@@ -5,6 +5,7 @@ import {
   likePost,
   dislikePost,
   getPost,
+  canInteractWithPost,
 } from "../services/PostService";
 import { check } from "express-validator";
 import Validate from "../middleware/validate";
@@ -84,12 +85,15 @@ postRouter.post(
     const liked = !!req.body.liked;
     const postId = req.body.postId as string;
     try {
+      if (!(await canInteractWithPost(userId, postId))) {
+        return res.sendStatus(403);
+      }
       if (liked) {
         await likePost(userId, postId);
       } else {
         await dislikePost(userId, postId);
       }
-      return res.status(200);
+      return res.sendStatus(200);
     } catch (err) {
       console.log(err);
       return res.status(500).send("Couldn't like/unlike a post!");

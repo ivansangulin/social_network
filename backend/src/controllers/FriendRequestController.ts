@@ -31,7 +31,7 @@ friendRequestRouter.post(
     const friendId = req.body.friendId;
     try {
       await sendFriendRequest(userId, friendId, new Date());
-      return res.status(200);
+      return res.sendStatus(200);
     } catch (err) {
       console.log(err);
       return res.status(500).send("Couldn't add friend");
@@ -48,7 +48,7 @@ friendRequestRouter.post(
     const friendId = req.body.friendId;
     try {
       await removeFriend(userId, friendId);
-      return res.status(200);
+      return res.sendStatus(200);
     } catch (err) {
       console.log(err);
       return res.status(500).send("Couldn't remove friend");
@@ -71,7 +71,7 @@ friendRequestRouter.post(
       } else {
         await declineFriendRequest(userId, friendId);
       }
-      return res.status(200);
+      return res.sendStatus(200);
     } catch (err) {
       console.log(err);
       return res.status(500).send("Couldn't handle friend request");

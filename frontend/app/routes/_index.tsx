@@ -415,7 +415,7 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
           </div>
           <textarea
             name="text"
-            className="w-full outline-none resize-none scrollbar-hidden text-base border p-2 rounded-md transition-height"
+            className="w-full outline-none resize-none scrollbar-hidden text-base border py-2 px-3 rounded-2xl transition-height"
             style={{ height: `${defaultPictureWidth}px` }}
             value={text}
             defaultValue={text}

@@ -27,5 +27,13 @@ export const prisma = new PrismaClient().$extends({
         },
       },
     },
+    comment: {
+      createdDescriptive: {
+        needs: { created: true },
+        compute(data) {
+          return calculateTime(data.created);
+        },
+      },
+    },
   },
 });

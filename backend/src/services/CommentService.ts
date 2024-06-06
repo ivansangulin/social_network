@@ -9,19 +9,29 @@ export const createComment = async (
   commentId?: string
 ) => {
   var parentId: string | undefined;
+  var commentCreatorId;
   if (commentId) {
-    const { parent_id } = await prisma.comment.findUniqueOrThrow({
+    const {
+      parent_id,
+      user: { id: comment_creator_id },
+    } = await prisma.comment.findUniqueOrThrow({
       select: {
         parent_id: true,
+        user: {
+          select: {
+            id: true,
+          },
+        },
       },
       where: {
         id: commentId,
       },
     });
     parentId = parent_id ?? commentId;
+    commentCreatorId = comment_creator_id;
   }
   const {
-    post: { user_id: friendId },
+    post: { user_id: post_creator_id },
     id,
   } = await prisma.comment.create({
     data: {
@@ -39,9 +49,21 @@ export const createComment = async (
       id: true,
     },
   });
-  if (userId !== friendId) {
+  if (commentCreatorId && commentCreatorId !== userId) {
     await createNotification(
-      friendId,
+      commentCreatorId,
+      postId,
+      `has replied to your comment!`,
+      userId
+    );
+  }
+  if (
+    userId !== post_creator_id && commentCreatorId
+      ? commentCreatorId !== post_creator_id
+      : true
+  ) {
+    await createNotification(
+      post_creator_id,
       postId,
       `has commented on your post!`,
       userId
@@ -51,12 +73,41 @@ export const createComment = async (
 };
 
 export const likeComment = async (userId: string, commentId: string) => {
-  await prisma.commentLike.create({
+  const {
+    comment: {
+      post: { id: post_id },
+      user: { id: comment_creator_id },
+    },
+  } = await prisma.commentLike.create({
+    select: {
+      comment: {
+        select: {
+          post: {
+            select: {
+              id: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      },
+    },
     data: {
       comment_id: commentId,
       user_id: userId,
     },
   });
+  if (comment_creator_id !== userId) {
+    await createNotification(
+      comment_creator_id,
+      post_id,
+      `has liked your comment!`,
+      userId
+    );
+  }
 };
 
 export const dislikeComment = async (userId: string, commentId: string) => {

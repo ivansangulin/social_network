@@ -6,6 +6,8 @@ import {
   dislikePost,
   getPost,
   canInteractWithPost,
+  sharePost,
+  postIsShareable,
 } from "../services/PostService";
 import { check } from "express-validator";
 import Validate from "../middleware/validate";
@@ -123,6 +125,31 @@ postRouter.get(
     } catch (err) {
       console.log(err);
       return res.status(500).send("Couldn't fetch post!");
+    }
+  }
+);
+
+postRouter.post(
+  "/share",
+  check("postId").isString().trim().notEmpty(),
+  check("text").isString().trim().optional(),
+  Validate,
+  async (req, res) => {
+    const userId = req.userId as string;
+    const postId = req.body.postId as string;
+    const text = req.body.text as string | undefined;
+    try {
+      if (
+        !(await canInteractWithPost(userId, postId)) ||
+        !(await postIsShareable(postId))
+      ) {
+        return res.sendStatus(403);
+      }
+      const { post } = await sharePost(userId, postId, text);
+      return res.status(200).json(post);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Couldn't share post!");
     }
   }
 );

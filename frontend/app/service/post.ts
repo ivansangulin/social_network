@@ -55,6 +55,16 @@ const postSchema = z.object({
     username: z.string(),
     profile_picture_uuid: z.string().nullish(),
   }),
+  parent: z
+    .object({
+      user: z.object({
+        username: z.string(),
+        profile_picture_uuid: z.string().nullish(),
+      }),
+      text: z.string(),
+      createdLocalDate: z.string(),
+    })
+    .nullish(),
   liked: z.boolean(),
   comments: z.array(commentSchema),
 });
@@ -204,6 +214,35 @@ export const getPost = async (request: Request, postId: string) => {
       return null;
     }
     const post = await postSchema.parse(await postResponse.json());
+    return post;
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
+};
+
+export const sharePost = async (
+  request: Request,
+  postId: string,
+  text: string | undefined
+) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return null;
+    }
+    const shareResponse = await fetch(`${process.env.BACKEND_URL}/post/share`, {
+      method: "POST",
+      headers: {
+        Cookie: cookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ postId, text }),
+    });
+    if (!shareResponse.ok) {
+      return null;
+    }
+    const post = postSchema.parse(await shareResponse.json());
     return post;
   } catch (err) {
     console.log(err);

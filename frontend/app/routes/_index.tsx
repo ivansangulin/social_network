@@ -10,7 +10,7 @@ import {
 } from "react";
 import { Chats } from "~/components/chat";
 import { Post } from "~/components/post";
-import { SocketContext } from "~/root";
+import { SetPostsContext, SocketContext } from "~/root";
 import { Friend, FriendsPagingType, getMyFriends } from "~/service/friendship";
 import { getMainPagePosts, PostPaging, Post as PostType } from "~/service/post";
 import { me, MyData } from "~/service/user";
@@ -344,11 +344,13 @@ const Posts = () => {
         <CreatePost onNewPost={onNewPost} />
         {posts ? (
           posts.length > 0 && (
-            <div className="flex flex-col space-y-12">
-              {posts.map((post) => (
-                <Post key={post.id} post={post} />
-              ))}
-            </div>
+            <SetPostsContext.Provider value={setPosts}>
+              <div className="flex flex-col space-y-12">
+                {posts.map((post) => (
+                  <Post key={post.id} post={post} />
+                ))}
+              </div>
+            </SetPostsContext.Provider>
           )
         ) : (
           <div className="text-4xl text-center">

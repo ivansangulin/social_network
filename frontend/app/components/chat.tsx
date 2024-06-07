@@ -23,6 +23,7 @@ import {
 import { ChatData } from "~/routes/_index";
 import { Friend } from "~/service/friendship";
 import { differenceInCalendarDays, format } from "date-fns";
+import { AnimatedDots } from "./animated-dots";
 
 interface NewMessageHandle {
   receiveMessage: (message: Message) => void;
@@ -473,11 +474,7 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
                   isFriendTyping ? "slide-in" : "hidden"
                 } absolute top-0 left-0 bg-neutral-200 rounded-md flex space-x-1 font-bold px-2`}
               >
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className={`dot dot-${i + 1} relative`}>
-                    .
-                  </div>
-                ))}
+                <AnimatedDots />
               </div>
             </div>
 
@@ -509,23 +506,27 @@ const Chat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
                   </div>
                 </div>
               );
-              const diff =
+              const diffFromNow = differenceInCalendarDays(
+                new Date(),
+                msg.created
+              );
+              const diffNextMessage =
                 index + 1 !== messages.length
                   ? differenceInCalendarDays(
                       msg.created,
                       messages[index + 1].created
                     )
                   : differenceInCalendarDays(new Date(), msg.created) + 1;
-              if (diff > 0) {
+              if (diffNextMessage > 0) {
                 const newBlockOfMessagesDate =
-                  diff > 7
+                  diffFromNow > 7
                     ? format(
                         new Date(msg.created).toLocaleDateString(),
                         "dd-MM-yyyy"
                       )
-                    : diff === 1
+                    : diffFromNow === 0
                     ? "Today"
-                    : diff === 2
+                    : diffFromNow === 1
                     ? "Yesterday"
                     : format(
                         new Date(msg.created).toLocaleDateString(),

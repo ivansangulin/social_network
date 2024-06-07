@@ -2,6 +2,7 @@ import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
 import { useState, useRef, useEffect } from "react";
 import { Post } from "~/components/post";
+import { SetPostsContext } from "~/root";
 import {
   getMyPosts,
   getUserPosts,
@@ -79,14 +80,16 @@ export default () => {
   }, [fetcher.data]);
 
   return (
-    <div className="w-full">
+    <div className="w-8/12">
       {posts ? (
         posts.length > 0 ? (
-          <div className="flex flex-col space-y-12 max-h-[100%]">
-            {posts.map((post) => (
-              <Post key={post.id} post={post} />
-            ))}
-          </div>
+          <SetPostsContext.Provider value={setPosts}>
+            <div className="flex flex-col space-y-12 max-h-[100%]">
+              {posts.map((post) => (
+                <Post key={post.id} post={post} />
+              ))}
+            </div>
+          </SetPostsContext.Provider>
         ) : (
           <div className="text-4xl text-center">
             {myProfile

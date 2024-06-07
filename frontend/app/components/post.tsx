@@ -5,11 +5,15 @@ import {
   ChatBubbleBottomCenterText,
   PaperAirplaneIcon,
   XMarkIcon,
+  ShareIcon,
 } from "./icons";
-import { FormEvent, useRef, useState, KeyboardEvent } from "react";
+import { FormEvent, useRef, useState, KeyboardEvent, useContext } from "react";
 import { useServerUrl } from "~/hooks/useServerUrl";
 import { useUserData } from "~/hooks/useUserData";
 import { Link } from "@remix-run/react";
+import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { AnimatedDots } from "./animated-dots";
+import { SetPostsContext } from "~/root";
 
 export const Post = ({ post }: { post: PostType }) => {
   const [liked, setLiked] = useState<boolean>(post.liked);
@@ -233,17 +237,53 @@ export const Post = ({ post }: { post: PostType }) => {
             </div>
           )}
           <div className="flex flex-col">
-            <Link
-              className="text-xl font-semibold hover:underline"
-              to={`/profile/${post.user.username}`}
-            >
-              {post.user.username}
-            </Link>
+            <div className="flex space-x-2 items-baseline">
+              <Link
+                className="text-lg font-semibold hover:underline"
+                to={`/profile/${post.user.username}`}
+              >
+                {post.user.username}
+              </Link>
+              {!!post.parent && (
+                <span className="text-sm text-neutral-600">shared a post</span>
+              )}
+            </div>
             <div className="text-sm">{post.createdLocalDate}</div>
           </div>
         </div>
       </div>
       <div>{post.text}</div>
+      {post.parent && (
+        <div className="flex flex-col space-y-4 p-4 border border-slate-300 rounded-lg">
+          <div className="flex flex-col space-y-0.5">
+            <div className="flex items-center space-x-2">
+              {post.parent.user.profile_picture_uuid && backendUrl ? (
+                <div className="rounded-full overflow-hidden aspect-square max-w-[50px]">
+                  <img
+                    alt=""
+                    src={`${backendUrl}/image/profile_picture/${post.parent.user.profile_picture_uuid}`}
+                    className="object-cover min-h-full"
+                  />
+                </div>
+              ) : (
+                <div className="overflow-hidden max-w-[50px]">
+                  <img alt="" src="/images/default_profile_picture.png" />
+                </div>
+              )}
+              <div className="flex flex-col">
+                <Link
+                  className="text-lg font-semibold hover:underline"
+                  to={`/profile/${post.parent.user.username}`}
+                >
+                  {post.user.username}
+                </Link>
+                <div className="text-sm">{post.parent.createdLocalDate}</div>
+              </div>
+            </div>
+          </div>
+          <div>{post.parent.text}</div>
+        </div>
+      )}
       <div className="flex justify-between">
         <div className="flex space-x-2 items-end">
           <HeartIcon className="w-5 h-5 fill-primary stroke-primary" />
@@ -258,12 +298,15 @@ export const Post = ({ post }: { post: PostType }) => {
       <div className="flex justify-around">
         <button onClick={onLike}>
           <HeartIcon
-            className={`w-8 h-8 stroke-primary ${liked && "fill-primary"}`}
+            className={`w-8 h-8 stroke-primary ${
+              liked ? "fill-primary" : "hover:scale-110 transition duration-100"
+            }`}
           />
         </button>
         <button onClick={() => textAreaRef.current?.focus()}>
-          <ChatBubbleBottomCenterText className="w-8 h-8 stroke-primary hover:fill-primary hover:stroke-white" />
+          <ChatBubbleBottomCenterText className="w-8 h-8 stroke-primary hover:scale-110 transition duration-100" />
         </button>
+        {!post.parent && <ShareDialog postId={post.id} />}
       </div>
       <hr />
       <div className="flex flex-col space-y-4">
@@ -448,5 +491,101 @@ const Comment = ({
           ))}
       </div>
     </div>
+  );
+};
+
+const ShareDialog = ({ postId }: { postId: string }) => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [text, setText] = useState<string>("");
+  const [sharing, setSharing] = useState<boolean>(false);
+  const setPosts = useContext(SetPostsContext);
+  const defaultRows = 4;
+
+  const share = () => {
+    setSharing(true);
+    const description = text;
+    setText("");
+    fetch(`/resource/share-post`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        postId: postId,
+        text: description,
+      }),
+    })
+      .then((res) => res.json())
+      .then((sharedPost: PostType | null) => {
+        if (!sharedPost) {
+          setText(description);
+        } else {
+          if (setPosts)
+            setPosts((prevPosts) => {
+              return [sharedPost, ...prevPosts];
+            });
+          setIsOpen(false);
+        }
+      })
+      .catch(() => {
+        setText(description);
+      })
+      .finally(() => {
+        setSharing(false);
+      });
+  };
+
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)}>
+        <ShareIcon className="w-8 h-8 stroke-primary hover:scale-110 transition duration-100" />
+      </button>
+      <Dialog
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 flex w-screen items-center justify-center p-4 bg-black/[0.5]">
+          <DialogPanel className="max-w-lg w-2/4 space-y-4 border bg-white p-4 rounded-2xl">
+            <DialogTitle className="font-bold text-center flex justify-between items-center">
+              <div className="p-1" />
+              <div className="text-lg">Share</div>
+              <button
+                className="p-1 rounded-full hover:bg-stone-100"
+                onClick={() => setIsOpen(false)}
+                disabled={sharing}
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </DialogTitle>
+            <textarea
+              rows={defaultRows}
+              placeholder="Add a description"
+              className="w-full outline-none resize-none scrollbar-hidden text-base rounded-2xl border py-2 px-4"
+              onChange={(e) => setText(e.currentTarget.value)}
+              value={text}
+              autoComplete="off"
+            />
+            <div className="flex">
+              <button
+                className={`w-full bg-primary text-white py-1 px-3 rounded-xl ${
+                  !sharing ? "hover:bg-primary-dark" : "cursor-not-allowed"
+                }`}
+                onClick={share}
+                disabled={sharing}
+              >
+                {!sharing ? (
+                  "Share"
+                ) : (
+                  <div className="flex justify-center tracking-widest h-fit">
+                    <AnimatedDots />
+                  </div>
+                )}
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+    </>
   );
 };

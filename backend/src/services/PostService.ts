@@ -39,6 +39,18 @@ export const getUserPosts = async (
             id: true,
           },
         },
+        parent: {
+          select: {
+            user: {
+              select: {
+                username: true,
+                profile_picture_uuid: true,
+              },
+            },
+            text: true,
+            createdLocalDate: true,
+          },
+        },
         comments: {
           select: {
             id: true,
@@ -151,6 +163,18 @@ export const createPost = async (userId: string, text: string) => {
         },
         select: {
           id: true,
+        },
+      },
+      parent: {
+        select: {
+          user: {
+            select: {
+              username: true,
+              profile_picture_uuid: true,
+            },
+          },
+          text: true,
+          createdLocalDate: true,
         },
       },
       comments: {
@@ -276,6 +300,18 @@ export const getMainPagePosts = async (
           },
           select: {
             id: true,
+          },
+        },
+        parent: {
+          select: {
+            user: {
+              select: {
+                username: true,
+                profile_picture_uuid: true,
+              },
+            },
+            text: true,
+            createdLocalDate: true,
           },
         },
         comments: {
@@ -420,6 +456,18 @@ export const getPost = async (userId: string, postId: string) => {
           id: true,
         },
       },
+      parent: {
+        select: {
+          user: {
+            select: {
+              username: true,
+              profile_picture_uuid: true,
+            },
+          },
+          text: true,
+          createdLocalDate: true,
+        },
+      },
       comments: {
         select: {
           id: true,
@@ -509,4 +557,134 @@ export const canInteractWithPost = async (userId: string, postId: string) => {
     return true;
   }
   return false;
+};
+
+export const postIsShareable = async (postId: string) => {
+  const { parent_id } = await prisma.post.findUniqueOrThrow({
+    select: {
+      parent_id: true,
+    },
+    where: {
+      id: postId,
+    },
+  });
+  return !parent_id;
+};
+
+export const sharePost = async (
+  userId: string,
+  postId: string,
+  text: string | undefined
+) => {
+  const post = await prisma.post.create({
+    data: {
+      user_id: userId,
+      parent_id: postId,
+      text: text ?? "",
+    },
+    select: {
+      id: true,
+      createdLocalDate: true,
+      text: true,
+      _count: {
+        select: {
+          likes: true,
+          comments: true,
+        },
+      },
+      user: {
+        select: {
+          profile_picture_uuid: true,
+          username: true,
+        },
+      },
+      likes: {
+        where: {
+          user_id: userId,
+        },
+        select: {
+          id: true,
+        },
+      },
+      parent: {
+        select: {
+          user: {
+            select: {
+              username: true,
+              profile_picture_uuid: true,
+            },
+          },
+          text: true,
+          createdLocalDate: true,
+        },
+      },
+      comments: {
+        select: {
+          id: true,
+          text: true,
+          createdDescriptive: true,
+          user: {
+            select: {
+              username: true,
+              profile_picture_uuid: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+            },
+          },
+          likes: {
+            select: {
+              id: true,
+            },
+            where: {
+              user_id: userId,
+            },
+          },
+          replies: {
+            select: {
+              id: true,
+              text: true,
+              createdDescriptive: true,
+              parent_id: true,
+              user: {
+                select: {
+                  username: true,
+                  profile_picture_uuid: true,
+                },
+              },
+              _count: {
+                select: {
+                  likes: true,
+                },
+              },
+              likes: {
+                select: {
+                  id: true,
+                },
+                where: {
+                  user_id: userId,
+                },
+              },
+            },
+            orderBy: { created: "asc" },
+          },
+        },
+        where: {
+          OR: [{ parent_id: null }, { parent_id: { isSet: false } }],
+        },
+        take: INITIAL_COMMENT_NUMBER,
+        orderBy: { created: "desc" },
+      },
+    },
+  });
+  const commentsMapped = post.comments.map((c) => {
+    const { likes, ...props } = c;
+    return { liked: likes.length > 0, ...props };
+  });
+  const { likes, comments, ...props } = post;
+  return {
+    post: { liked: likes.length > 0, comments: commentsMapped, ...props },
+  };
 };

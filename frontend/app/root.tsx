@@ -11,8 +11,15 @@ import {
 import stylesheet from "./tailwind.css?url";
 import { Navbar } from "./components/navbar";
 import { me } from "./service/user";
-import { createContext, useEffect, useState } from "react";
+import {
+  createContext,
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useState,
+} from "react";
 import { io, Socket } from "socket.io-client";
+import { Post } from "./service/post";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -45,6 +52,9 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 
 export const SocketContext = createContext<Socket | null>(null);
 export const ServerUrlContext = createContext<string | null>(null);
+export const SetPostsContext = createContext<Dispatch<
+  SetStateAction<Post[]>
+> | null>(null);
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, backendURL } = useLoaderData<typeof loader>();

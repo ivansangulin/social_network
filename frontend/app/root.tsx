@@ -14,6 +14,7 @@ import { me } from "./service/user";
 import {
   createContext,
   Dispatch,
+  ReactNode,
   SetStateAction,
   useEffect,
   useState,
@@ -30,7 +31,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (user) {
     return json({ user, backendURL: process.env.BACKEND_URL });
   }
-  return json({ user: null, backendURL: null });
+  return json({ user: null, backendURL: process.env.BACKEND_URL });
 };
 
 export type rootLoader = typeof loader;

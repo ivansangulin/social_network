@@ -6,6 +6,8 @@ import {
   canInteractWithComment,
   createComment,
   dislikeComment,
+  getComments,
+  getReplies,
   likeComment,
 } from "../services/CommentService";
 
@@ -17,7 +19,7 @@ commentRouter.post(
   check("text").isString().trim().notEmpty(),
   check("commentId").optional().isString(),
   Validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     const userId = req.userId as string;
     const postId = req.body.postId as string;
     const text = req.body.text as string;
@@ -48,7 +50,7 @@ commentRouter.post(
   check("commentId").isString().trim().notEmpty(),
   check("liked").isBoolean().notEmpty(),
   Validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     const userId = req.userId as string;
     const commentId = req.body.commentId as string;
     const liked = req.body.liked as boolean;
@@ -65,6 +67,50 @@ commentRouter.post(
     } catch (err) {
       console.log(err);
       return res.status(500).send("Couldn't like comment");
+    }
+  }
+);
+
+commentRouter.get(
+  "/",
+  check("postId").isString().trim().notEmpty(),
+  check("cursor").optional().isString(),
+  Validate,
+  async (req: Request, res: Response) => {
+    const userId = req.userId as string;
+    const postId = req.query.postId as string;
+    const cursor = req.query.cursor as string;
+    try {
+      if (!(await canInteractWithPost(userId, postId))) {
+        return res.sendStatus(403);
+      }
+      const commentsPaging = await getComments(userId, postId, cursor);
+      return res.status(200).json(commentsPaging);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Couldn't fetch comments");
+    }
+  }
+);
+
+commentRouter.get(
+  "/replies",
+  check("commentId").isString().trim().notEmpty(),
+  check("cursor").optional().isString(),
+  Validate,
+  async (req: Request, res: Response) => {
+    const userId = req.userId as string;
+    const commentId = req.query.commentId as string;
+    const cursor = req.query.cursor as string;
+    try {
+      if (!(await canInteractWithComment(userId, commentId))) {
+        return res.sendStatus(403);
+      }
+      const repliesPaging = await getReplies(userId, commentId, cursor);
+      return res.status(200).json(repliesPaging);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Couldn't fetch replies");
     }
   }
 );

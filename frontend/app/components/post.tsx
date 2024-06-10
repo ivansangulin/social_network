@@ -1,4 +1,4 @@
-import { CommentType, Post as PostType } from "~/service/post";
+import { CommentType, Post as PostType, Reply } from "~/service/post";
 import {
   HeartIcon,
   CommentIcon,
@@ -7,23 +7,33 @@ import {
   XMarkIcon,
   ShareIcon,
 } from "./icons";
-import { FormEvent, useRef, useState, KeyboardEvent, useContext } from "react";
+import {
+  FormEvent,
+  useRef,
+  useState,
+  KeyboardEvent,
+  useContext,
+  useEffect,
+} from "react";
 import { useServerUrl } from "~/hooks/useServerUrl";
 import { useUserData } from "~/hooks/useUserData";
-import { Link } from "@remix-run/react";
+import { Link, useFetcher, useLocation, useNavigate } from "@remix-run/react";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { AnimatedDots } from "./animated-dots";
 import { SetPostsContext } from "~/root";
+import { CommentsPaging, RepliesPaging } from "~/service/comment";
 
 export const Post = ({ post }: { post: PostType }) => {
   const [liked, setLiked] = useState<boolean>(post.liked);
   const [likeCount, setLikeCount] = useState<number>(post._count.likes);
-  const [comments, setComments] = useState<CommentType[]>(post.comments);
+  const [comments, setComments] = useState<CommentType[]>(post.comments ?? []);
   const [commentCount, setCommentCount] = useState<number>(
     post._count.comments
   );
   const backendUrl = useServerUrl();
   const user = useUserData()!;
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const defaultRows = 1;
   const defaultPictureHeight = 42;
@@ -34,6 +44,56 @@ export const Post = ({ post }: { post: PostType }) => {
   const commentingDisabled = text.trim() === "";
 
   const [reply, setReply] = useState<CommentType | null | undefined>();
+
+  const fetcher = useFetcher();
+  const cursor = useRef<string>(
+    comments.length > 0 ? comments[comments.length - 1].id : ""
+  );
+  const fetching = useRef<boolean>(false);
+  const hasMore = useRef<boolean>(
+    post.parentCommentCount ? comments.length < post.parentCommentCount : false
+  );
+  const commentsContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (commentsContainerRef.current) {
+        if (
+          commentsContainerRef.current.scrollHeight >
+            commentsContainerRef.current.offsetHeight +
+              commentsContainerRef.current.scrollTop ||
+          fetching.current ||
+          !hasMore.current
+        ) {
+          return;
+        }
+        fetching.current = true;
+        fetcher.load(
+          `/resource/comments?entities=comments&parentEntityId=${post.id}&cursor=${cursor.current}`
+        );
+      }
+    };
+    const commentsContainerCurrent = commentsContainerRef.current;
+    if (commentsContainerCurrent) {
+      commentsContainerCurrent.addEventListener("scroll", handleScroll);
+      return () => {
+        commentsContainerCurrent.removeEventListener("scroll", handleScroll);
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    const data = fetcher.data as CommentsPaging | null;
+    if (data && post.parentCommentCount) {
+      cursor.current = data.cursor;
+      hasMore.current =
+        comments.length + data.comments.length < post.parentCommentCount;
+      setComments((prevComments) => {
+        return [...prevComments, ...data.comments];
+      });
+    }
+    fetching.current = false;
+  }, [fetcher.data]);
 
   const onLike = (e: FormEvent<HTMLButtonElement>) => {
     !liked
@@ -303,23 +363,34 @@ export const Post = ({ post }: { post: PostType }) => {
             }`}
           />
         </button>
-        <button onClick={() => textAreaRef.current?.focus()}>
+        <button
+          onClick={
+            location.pathname.includes("/post/")
+              ? () => textAreaRef.current?.focus()
+              : () => navigate(`/post/${post.id}`)
+          }
+        >
           <ChatBubbleBottomCenterText className="w-8 h-8 stroke-primary hover:scale-110 transition duration-100" />
         </button>
         {!post.parent && <ShareDialog postId={post.id} />}
       </div>
       <hr />
       <div className="flex flex-col space-y-4">
-        {comments.map((comment) => (
-          <Comment
-            comment={comment}
-            key={comment.id}
-            onReply={(comment: CommentType) => {
-              setReply(comment);
-              textAreaRef.current?.focus();
-            }}
-          />
-        ))}
+        <div
+          className="flex flex-col space-y-4 max-h-[48rem] overflow-y-auto no-scrollbar"
+          ref={commentsContainerRef}
+        >
+          {comments.map((comment) => (
+            <Comment
+              comment={comment}
+              key={comment.id}
+              onReply={(comment: CommentType) => {
+                setReply(comment);
+                textAreaRef.current?.focus();
+              }}
+            />
+          ))}
+        </div>
         <div className="flex-col">
           {reply && (
             <div className="flex items-center space-x-4 ml-20 bg-secondary w-fit py-1 px-2 text-sm rounded-t-lg">
@@ -400,7 +471,30 @@ const Comment = ({
   const backendUrl = useServerUrl();
   const [liked, setLiked] = useState<boolean>(comment.liked);
   const [likeCount, setLikeCount] = useState<number>(comment._count.likes);
+  const [replies, setReplies] = useState<Reply[]>(comment.replies ?? []);
   const defaultPictureHeight = 42;
+
+  const fetcher = useFetcher();
+  const cursor = useRef<string>(
+    replies.length > 0 ? replies[replies.length - 1].id : "string"
+  );
+  const fetching = useRef<boolean>(false);
+  const hasMore = useRef<boolean>(
+    comment._count.replies ? comment._count.replies > replies.length : false
+  );
+
+  useEffect(() => {
+    const data = fetcher.data as RepliesPaging | null;
+    if (data && comment._count.replies) {
+      cursor.current = data.cursor;
+      hasMore.current =
+        replies.length + data.replies.length < comment._count.replies;
+      setReplies((prevReplies) => {
+        return [...prevReplies, ...data.replies];
+      });
+    }
+    fetching.current = false;
+  }, [fetcher.data]);
 
   const likeComment = () => {
     setLiked((l) => {
@@ -438,6 +532,15 @@ const Comment = ({
           return !liked ? --lc : ++lc;
         });
       });
+  };
+
+  const fetchReplies = () => {
+    if (!fetching.current) {
+      fetching.current = true;
+      fetcher.load(
+        `/resource/comments?entities=replies&parentEntityId=${comment.id}&cursor=${cursor.current}`
+      );
+    }
   };
 
   return (
@@ -483,12 +586,19 @@ const Comment = ({
             <span>{likeCount}</span>
           </div>
         </div>
-        {comment.replies &&
-          comment.replies.map((reply) => (
-            <div className="py-1" key={reply.id}>
-              <Comment comment={reply} onReply={onReply} key={reply.id} />
-            </div>
-          ))}
+        {replies.map((reply) => (
+          <div className="py-1" key={reply.id}>
+            <Comment comment={reply} onReply={onReply} key={reply.id} />
+          </div>
+        ))}
+        {hasMore.current && (
+          <button
+            className="text-sky-600 hover:underline self-start"
+            onClick={fetchReplies}
+          >
+            View more
+          </button>
+        )}
       </div>
     </div>
   );

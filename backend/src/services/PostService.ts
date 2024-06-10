@@ -1,9 +1,9 @@
 import { prisma } from "../utils/client";
+import { COMMENT_PAGING_TAKE, REPLIES_PAGING_TAKE } from "./CommentService";
 import { areFriends } from "./FriendshipService";
 import { createNotification } from "./NotificationService";
 
 const POST_PAGING_TAKE = 8;
-const INITIAL_COMMENT_NUMBER = 3;
 
 export const getUserPosts = async (
   userId: string,
@@ -51,64 +51,6 @@ export const getUserPosts = async (
             createdLocalDate: true,
           },
         },
-        comments: {
-          select: {
-            id: true,
-            text: true,
-            createdDescriptive: true,
-            user: {
-              select: {
-                username: true,
-                profile_picture_uuid: true,
-              },
-            },
-            _count: {
-              select: {
-                likes: true,
-              },
-            },
-            likes: {
-              select: {
-                id: true,
-              },
-              where: {
-                user_id: userId,
-              },
-            },
-            replies: {
-              select: {
-                id: true,
-                text: true,
-                createdDescriptive: true,
-                parent_id: true,
-                user: {
-                  select: {
-                    username: true,
-                    profile_picture_uuid: true,
-                  },
-                },
-                _count: {
-                  select: {
-                    likes: true,
-                  },
-                },
-                likes: {
-                  select: {
-                    id: true,
-                  },
-                  where: {
-                    user_id: userId,
-                  },
-                },
-              },
-              orderBy: { created: "asc" },
-            },
-          },
-          where: {
-            OR: [{ parent_id: null }, { parent_id: { isSet: false } }],
-          },
-          take: INITIAL_COMMENT_NUMBER,
-        },
       },
       where: {
         user_id: userId,
@@ -118,12 +60,8 @@ export const getUserPosts = async (
   ]);
 
   const mappedPosts = posts.map((post) => {
-    const commentsMapped = post.comments.map((c) => {
-      const { likes, ...props } = c;
-      return { liked: likes.length > 0, ...props };
-    });
-    const { likes, comments, ...props } = post;
-    return { liked: likes.length > 0, comments: commentsMapped, ...props };
+    const { likes, ...props } = post;
+    return { liked: likes.length > 0, ...props };
   });
 
   const userPostPaging = {
@@ -177,74 +115,11 @@ export const createPost = async (userId: string, text: string) => {
           createdLocalDate: true,
         },
       },
-      comments: {
-        select: {
-          id: true,
-          text: true,
-          createdDescriptive: true,
-          user: {
-            select: {
-              username: true,
-              profile_picture_uuid: true,
-            },
-          },
-          _count: {
-            select: {
-              likes: true,
-            },
-          },
-          likes: {
-            select: {
-              id: true,
-            },
-            where: {
-              user_id: userId,
-            },
-          },
-          replies: {
-            select: {
-              id: true,
-              text: true,
-              createdDescriptive: true,
-              parent_id: true,
-              user: {
-                select: {
-                  username: true,
-                  profile_picture_uuid: true,
-                },
-              },
-              _count: {
-                select: {
-                  likes: true,
-                },
-              },
-              likes: {
-                select: {
-                  id: true,
-                },
-                where: {
-                  user_id: userId,
-                },
-              },
-            },
-            orderBy: { created: "asc" },
-          },
-        },
-        where: {
-          OR: [{ parent_id: null }, { parent_id: { isSet: false } }],
-        },
-        take: INITIAL_COMMENT_NUMBER,
-        orderBy: { created: "desc" },
-      },
     },
   });
-  const commentsMapped = post.comments.map((c) => {
-    const { likes, ...props } = c;
-    return { liked: likes.length > 0, ...props };
-  });
-  const { likes, comments, ...props } = post;
+  const { likes, ...props } = post;
   return {
-    post: { liked: likes.length > 0, comments: commentsMapped, ...props },
+    post: { liked: likes.length > 0, ...props },
   };
 };
 
@@ -314,65 +189,6 @@ export const getMainPagePosts = async (
             createdLocalDate: true,
           },
         },
-        comments: {
-          select: {
-            id: true,
-            text: true,
-            createdDescriptive: true,
-            user: {
-              select: {
-                username: true,
-                profile_picture_uuid: true,
-              },
-            },
-            _count: {
-              select: {
-                likes: true,
-              },
-            },
-            likes: {
-              select: {
-                id: true,
-              },
-              where: {
-                user_id: userId,
-              },
-            },
-            replies: {
-              select: {
-                id: true,
-                text: true,
-                createdDescriptive: true,
-                parent_id: true,
-                user: {
-                  select: {
-                    username: true,
-                    profile_picture_uuid: true,
-                  },
-                },
-                _count: {
-                  select: {
-                    likes: true,
-                  },
-                },
-                likes: {
-                  select: {
-                    id: true,
-                  },
-                  where: {
-                    user_id: userId,
-                  },
-                },
-              },
-              orderBy: { created: "asc" },
-            },
-          },
-          where: {
-            OR: [{ parent_id: null }, { parent_id: { isSet: false } }],
-          },
-          take: INITIAL_COMMENT_NUMBER,
-          orderBy: { created: "desc" },
-        },
       },
       orderBy: {
         created: "desc",
@@ -381,12 +197,8 @@ export const getMainPagePosts = async (
   ]);
 
   const mappedPosts = posts.map((post) => {
-    const commentsMapped = post.comments.map((c) => {
-      const { likes, ...props } = c;
-      return { liked: likes.length > 0, ...props };
-    });
-    const { likes, comments, ...props } = post;
-    return { liked: likes.length > 0, comments: commentsMapped, ...props };
+    const { likes, ...props } = post;
+    return { liked: likes.length > 0, ...props };
   });
 
   const userPostPaging = {
@@ -429,115 +241,122 @@ export const dislikePost = async (userId: string, postId: string) => {
 };
 
 export const getPost = async (userId: string, postId: string) => {
-  const post = await prisma.post.findUniqueOrThrow({
-    select: {
-      id: true,
-      createdLocalDate: true,
-      text: true,
-      user_id: true,
-      _count: {
-        select: {
-          likes: true,
-          comments: true,
-        },
-      },
-      user: {
-        select: {
-          profile_picture_uuid: true,
-          username: true,
-          locked_profile: true,
-        },
-      },
-      likes: {
-        where: {
-          user_id: userId,
-        },
-        select: {
-          id: true,
-        },
-      },
-      parent: {
-        select: {
-          user: {
-            select: {
-              username: true,
-              profile_picture_uuid: true,
-            },
+  const [post, parentCommentCount] = await Promise.all([
+    prisma.post.findUniqueOrThrow({
+      select: {
+        id: true,
+        createdLocalDate: true,
+        text: true,
+        user_id: true,
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
           },
-          text: true,
-          createdLocalDate: true,
         },
-      },
-      comments: {
-        select: {
-          id: true,
-          text: true,
-          createdDescriptive: true,
-          user: {
-            select: {
-              username: true,
-              profile_picture_uuid: true,
-            },
+        user: {
+          select: {
+            profile_picture_uuid: true,
+            username: true,
+            locked_profile: true,
           },
-          _count: {
-            select: {
-              likes: true,
-            },
+        },
+        likes: {
+          where: {
+            user_id: userId,
           },
-          likes: {
-            select: {
-              id: true,
-            },
-            where: {
-              user_id: userId,
-            },
+          select: {
+            id: true,
           },
-          replies: {
-            select: {
-              id: true,
-              text: true,
-              createdDescriptive: true,
-              parent_id: true,
-              user: {
-                select: {
-                  username: true,
-                  profile_picture_uuid: true,
-                },
-              },
-              _count: {
-                select: {
-                  likes: true,
-                },
-              },
-              likes: {
-                select: {
-                  id: true,
-                },
-                where: {
-                  user_id: userId,
-                },
+        },
+        parent: {
+          select: {
+            user: {
+              select: {
+                username: true,
+                profile_picture_uuid: true,
               },
             },
-            orderBy: { created: "asc" },
+            text: true,
+            createdLocalDate: true,
           },
         },
-        where: {
-          OR: [{ parent_id: null }, { parent_id: { isSet: false } }],
+        comments: {
+          select: {
+            id: true,
+            text: true,
+            createdDescriptive: true,
+            user: {
+              select: {
+                username: true,
+                profile_picture_uuid: true,
+              },
+            },
+            _count: {
+              select: {
+                likes: true,
+                replies: true,
+              },
+            },
+            likes: {
+              select: {
+                id: true,
+              },
+              where: {
+                user_id: userId,
+              },
+            },
+            replies: {
+              select: {
+                id: true,
+                text: true,
+                createdDescriptive: true,
+                parent_id: true,
+                user: {
+                  select: {
+                    username: true,
+                    profile_picture_uuid: true,
+                  },
+                },
+                _count: {
+                  select: {
+                    likes: true,
+                  },
+                },
+                likes: {
+                  select: {
+                    id: true,
+                  },
+                  where: {
+                    user_id: userId,
+                  },
+                },
+              },
+              take: REPLIES_PAGING_TAKE,
+              orderBy: { created: "asc" },
+            },
+          },
+          where: {
+            OR: [{ parent_id: null }, { parent_id: { isSet: false } }],
+          },
+          take: COMMENT_PAGING_TAKE,
+          orderBy: { created: "desc" },
         },
-        take: INITIAL_COMMENT_NUMBER,
       },
-    },
-    where: {
-      id: postId,
-    },
-  });
+      where: {
+        id: postId,
+      },
+    }),
+    await prisma.comment.count({
+      where: {
+        post_id: postId,
+        OR: [{ parent_id: null }, { parent_id: { isSet: false } }],
+      },
+    }),
+  ]);
 
-  const commentsMapped = post.comments.map((c) => {
-    const { likes, ...props } = c;
-    return { liked: likes.length > 0, ...props };
-  });
-  const { likes, comments, ...props } = post;
-  return { liked: likes.length > 0, comments: commentsMapped, ...props };
+  const { likes, ...props } = post;
+  return { liked: likes.length > 0, parentCommentCount, ...props };
 };
 
 export const canInteractWithPost = async (userId: string, postId: string) => {
@@ -618,73 +437,11 @@ export const sharePost = async (
           createdLocalDate: true,
         },
       },
-      comments: {
-        select: {
-          id: true,
-          text: true,
-          createdDescriptive: true,
-          user: {
-            select: {
-              username: true,
-              profile_picture_uuid: true,
-            },
-          },
-          _count: {
-            select: {
-              likes: true,
-            },
-          },
-          likes: {
-            select: {
-              id: true,
-            },
-            where: {
-              user_id: userId,
-            },
-          },
-          replies: {
-            select: {
-              id: true,
-              text: true,
-              createdDescriptive: true,
-              parent_id: true,
-              user: {
-                select: {
-                  username: true,
-                  profile_picture_uuid: true,
-                },
-              },
-              _count: {
-                select: {
-                  likes: true,
-                },
-              },
-              likes: {
-                select: {
-                  id: true,
-                },
-                where: {
-                  user_id: userId,
-                },
-              },
-            },
-            orderBy: { created: "asc" },
-          },
-        },
-        where: {
-          OR: [{ parent_id: null }, { parent_id: { isSet: false } }],
-        },
-        take: INITIAL_COMMENT_NUMBER,
-        orderBy: { created: "desc" },
-      },
     },
   });
-  const commentsMapped = post.comments.map((c) => {
-    const { likes, ...props } = c;
-    return { liked: likes.length > 0, ...props };
-  });
-  const { likes, comments, ...props } = post;
+
+  const { likes, ...props } = post;
   return {
-    post: { liked: likes.length > 0, comments: commentsMapped, ...props },
+    post: { liked: likes.length > 0, ...props },
   };
 };

@@ -1,5 +1,21 @@
 import { z } from "zod";
 import { getCookie } from "./user";
+import { commentSchema, replySchema } from "./post";
+
+const commentsPagingSchema = z.object({
+  count: z.number(),
+  comments: z.array(commentSchema),
+  cursor: z.string(),
+});
+
+const repliesPagingSchema = z.object({
+  count: z.number(),
+  replies: z.array(replySchema),
+  cursor: z.string(),
+});
+
+export type CommentsPaging = z.infer<typeof commentsPagingSchema>;
+export type RepliesPaging = z.infer<typeof repliesPagingSchema>;
 
 export const commentOnPost = async (
   request: Request,
@@ -59,5 +75,69 @@ export const likeComment = async (
   } catch (err) {
     console.log(err);
     return false;
+  }
+};
+
+export const getComments = async (
+  request: Request,
+  postId: string,
+  cursor?: string
+) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return false;
+    }
+    const commentsResponse = await fetch(
+      `${process.env.BACKEND_URL}/comment?postId=${postId}&cursor=${
+        cursor ?? ""
+      }`,
+      {
+        method: "GET",
+        headers: {
+          Cookie: cookie,
+        },
+      }
+    );
+    if (!commentsResponse.ok) {
+      return null;
+    }
+    const comments = commentsPagingSchema.parse(await commentsResponse.json());
+    return comments;
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
+};
+
+export const getReplies = async (
+  request: Request,
+  commentId: string,
+  cursor?: string
+) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return false;
+    }
+    const repliesResponse = await fetch(
+      `${
+        process.env.BACKEND_URL
+      }/comment/replies?commentId=${commentId}&cursor=${cursor ?? ""}`,
+      {
+        method: "GET",
+        headers: {
+          Cookie: cookie,
+        },
+      }
+    );
+    if (!repliesResponse.ok) {
+      return null;
+    }
+    const replies = repliesPagingSchema.parse(await repliesResponse.json());
+    return replies;
+  } catch (err) {
+    console.log(err);
+    return null;
   }
 };

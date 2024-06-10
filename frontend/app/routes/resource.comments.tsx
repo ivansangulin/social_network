@@ -1,6 +1,6 @@
-import { ActionFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { z } from "zod";
-import { likeComment } from "~/service/comment";
+import { getComments, getReplies, likeComment } from "~/service/comment";
 
 const actionSchema = z.object({
   commentId: z.string(),
@@ -15,5 +15,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   } catch (err) {
     console.log(err);
     return false;
+  }
+};
+
+const loaderSchema = z.object({
+  entities: z.enum(["comments", "replies"]),
+  parentEntityId: z.string(),
+  cursor: z.string().optional(),
+});
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  try {
+    const params = Object.fromEntries(
+      new URL(request.url).searchParams.entries()
+    );
+    const { entities, parentEntityId, cursor } = loaderSchema.parse(params);
+    if (entities === "comments") {
+      return await getComments(request, parentEntityId, cursor);
+    } else {
+      return await getReplies(request, parentEntityId, cursor);
+    }
+  } catch (err) {
+    console.log(err);
+    return null;
   }
 };

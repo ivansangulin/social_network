@@ -2,6 +2,9 @@ import { prisma } from "../utils/client";
 import { areFriends } from "./FriendshipService";
 import { createNotification } from "./NotificationService";
 
+export const COMMENT_PAGING_TAKE = 20;
+export const REPLIES_PAGING_TAKE = 5;
+
 export const createComment = async (
   userId: string,
   postId: string,
@@ -58,9 +61,8 @@ export const createComment = async (
     );
   }
   if (
-    userId !== post_creator_id && commentCreatorId
-      ? commentCreatorId !== post_creator_id
-      : true
+    userId !== post_creator_id &&
+    (commentCreatorId ? commentCreatorId !== post_creator_id : true)
   ) {
     await createNotification(
       post_creator_id,
@@ -145,4 +147,140 @@ export const canInteractWithComment = async (
     return true;
   }
   return false;
+};
+
+export const getComments = async (
+  userId: string,
+  postId: string,
+  cursor: string | undefined
+) => {
+  const [count, comments] = await Promise.all([
+    prisma.comment.count({
+      where: {
+        post_id: postId,
+        OR: [{ parent_id: null }, { parent_id: { isSet: false } }],
+      },
+    }),
+    prisma.comment.findMany({
+      take: COMMENT_PAGING_TAKE,
+      skip: !!cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
+      select: {
+        id: true,
+        text: true,
+        createdDescriptive: true,
+        user: {
+          select: {
+            username: true,
+            profile_picture_uuid: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            replies: true,
+          },
+        },
+        likes: {
+          select: {
+            id: true,
+          },
+          where: {
+            user_id: userId,
+          },
+        },
+        replies: {
+          select: {
+            id: true,
+            text: true,
+            createdDescriptive: true,
+            parent_id: true,
+            user: {
+              select: {
+                username: true,
+                profile_picture_uuid: true,
+              },
+            },
+            _count: {
+              select: {
+                likes: true,
+              },
+            },
+            likes: {
+              select: {
+                id: true,
+              },
+              where: {
+                user_id: userId,
+              },
+            },
+          },
+          take: REPLIES_PAGING_TAKE,
+          orderBy: { created: "asc" },
+        },
+      },
+      where: {
+        post_id: postId,
+        OR: [{ parent_id: null }, { parent_id: { isSet: false } }],
+      },
+      orderBy: { created: "desc" },
+    }),
+  ]);
+  return {
+    count,
+    comments,
+    cursor: comments.length > 0 ? comments[comments.length - 1].id : "",
+  };
+};
+
+export const getReplies = async (
+  userId: string,
+  commentId: string,
+  cursor: string | undefined
+) => {
+  const [count, replies] = await Promise.all([
+    prisma.comment.count({
+      where: {
+        parent_id: commentId,
+      },
+    }),
+    prisma.comment.findMany({
+      take: REPLIES_PAGING_TAKE,
+      skip: !!cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
+      select: {
+        id: true,
+        text: true,
+        createdDescriptive: true,
+        user: {
+          select: {
+            username: true,
+            profile_picture_uuid: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+          },
+        },
+        likes: {
+          select: {
+            id: true,
+          },
+          where: {
+            user_id: userId,
+          },
+        },
+      },
+      where: {
+        parent_id: commentId,
+      },
+      orderBy: { created: "asc" },
+    }),
+  ]);
+  return {
+    count,
+    replies: replies,
+    cursor: replies.length > 0 ? replies[replies.length - 1].id : "",
+  };
 };

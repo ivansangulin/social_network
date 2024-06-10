@@ -1,47 +1,55 @@
 import { z } from "zod";
 import { getCookie } from "./user";
 
-const commentSchema = z.object({
-  id: z.string(),
-  text: z.string(),
-  createdDescriptive: z.string(),
-  parent_id: z.string().optional(),
-  user: z.object({
-    username: z.string(),
-    profile_picture_uuid: z.string().nullish(),
-  }),
-  _count: z.object({
-    likes: z.number(),
-  }),
-  liked: z.boolean(),
-  replies: z
-    .array(
-      z
-        .object({
-          id: z.string(),
-          text: z.string(),
-          createdDescriptive: z.string(),
-          parent_id: z.string().optional(),
-          user: z.object({
-            username: z.string(),
-            profile_picture_uuid: z.string().nullish(),
-          }),
-          _count: z.object({
-            likes: z.number(),
-          }),
-          likes: z.array(
-            z.object({
-              id: z.string(),
-            })
-          ),
-        })
-        .transform(({ likes, ...props }) => ({
-          liked: likes.length > 0,
-          ...props,
-        }))
-    )
-    .nullish(),
-});
+export const replySchema = z
+  .object({
+    id: z.string(),
+    text: z.string(),
+    createdDescriptive: z.string(),
+    parent_id: z.string().optional(),
+    user: z.object({
+      username: z.string(),
+      profile_picture_uuid: z.string().nullish(),
+    }),
+    _count: z.object({
+      likes: z.number(),
+    }),
+    likes: z.array(
+      z.object({
+        id: z.string(),
+      })
+    ),
+  })
+  .transform(({ likes, ...props }) => ({
+    liked: likes.length > 0,
+    ...props,
+  }));
+
+export const commentSchema = z
+  .object({
+    id: z.string(),
+    text: z.string(),
+    createdDescriptive: z.string(),
+    parent_id: z.string().optional(),
+    user: z.object({
+      username: z.string(),
+      profile_picture_uuid: z.string().nullish(),
+    }),
+    _count: z.object({
+      likes: z.number(),
+      replies: z.number().nullish(),
+    }),
+    likes: z.array(
+      z.object({
+        id: z.string(),
+      })
+    ),
+    replies: z.array(replySchema).nullish(),
+  })
+  .transform(({ likes, ...props }) => ({
+    liked: likes.length > 0,
+    ...props,
+  }));
 
 const postSchema = z.object({
   id: z.string(),
@@ -66,7 +74,8 @@ const postSchema = z.object({
     })
     .nullish(),
   liked: z.boolean(),
-  comments: z.array(commentSchema),
+  comments: z.array(commentSchema).nullish(),
+  parentCommentCount: z.number().nullish(),
 });
 
 const postPagingSchema = z.object({
@@ -78,6 +87,7 @@ const postPagingSchema = z.object({
 export type Post = z.infer<typeof postSchema>;
 export type PostPaging = z.infer<typeof postPagingSchema>;
 export type CommentType = z.infer<typeof commentSchema>;
+export type Reply = z.infer<typeof replySchema>;
 
 export const getMyPosts = async (request: Request, cursor: string | null) => {
   const cookie = getCookie(request);

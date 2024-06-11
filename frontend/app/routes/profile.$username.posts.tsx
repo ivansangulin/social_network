@@ -80,11 +80,11 @@ export default () => {
   }, [fetcher.data]);
 
   return (
-    <div className="w-8/12">
+    <div className="w-6/12">
       {posts ? (
         posts.length > 0 ? (
           <SetPostsContext.Provider value={setPosts}>
-            <div className="flex flex-col space-y-12 max-h-[100%]">
+            <div className="flex flex-col space-y-12">
               {posts.map((post) => (
                 <Post key={post.id} post={post} />
               ))}

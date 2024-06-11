@@ -21,6 +21,7 @@ import {
 } from "react";
 import { io, Socket } from "socket.io-client";
 import { Post } from "./service/post";
+import { ProgressBar } from "./components/progress-bar";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -86,7 +87,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <SocketContext.Provider value={socket}>
           <ServerUrlContext.Provider value={backendURL!}>
             <div className="min-h-screen w-full flex flex-col relative bg-secondary">
-              <Navbar />
+              <ProgressBar />
+              {!!user && <Navbar />}
               {children}
             </div>
           </ServerUrlContext.Provider>

@@ -358,8 +358,8 @@ export const Post = ({ post }: { post: PostType }) => {
       <div className="flex justify-around">
         <button onClick={onLike}>
           <HeartIcon
-            className={`w-8 h-8 stroke-primary ${
-              liked ? "fill-primary" : "hover:scale-110 transition duration-100"
+            className={`w-8 h-8 stroke-primary hover:scale-110 transition duration-100 ${
+              liked && "fill-primary"
             }`}
           />
         </button>

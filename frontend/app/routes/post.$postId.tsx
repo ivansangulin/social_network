@@ -20,7 +20,7 @@ export default () => {
   const post = useLoaderData<typeof loader>();
 
   return (
-    <div className="mx-auto my-4 w-[30%]">
+    <div className="mx-auto my-auto w-3/12">
       {post ? (
         <Post post={post} />
       ) : (

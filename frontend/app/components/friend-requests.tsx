@@ -4,27 +4,35 @@ import { FriendRequest, PendingRequests } from "~/service/friend-requests";
 import { CheckIcon, UsersIcon, XMarkIcon } from "./icons";
 import { useServerUrl } from "~/hooks/useServerUrl";
 import { SocketContext } from "~/root";
+import { Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
 
 export const FriendRequests = () => {
+  return (
+    <Popover className="h-fit w-full">
+      {({ open }) => <PopoverContent open={open} />}
+    </Popover>
+  );
+};
+
+const PopoverContent = ({ open }: { open: boolean }) => {
   const socket = useContext(SocketContext);
   const fetcher = useFetcher();
   const [unreadFriendRequestsCount, setUnreadFriendRequestsCount] =
     useState<number>(0);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
-  const [windowOpen, setWindowOpen] = useState<boolean>(false);
+  const [popoverOpen, setPopoverOpen] = useState<boolean>(open);
   const backendUrl = useServerUrl();
 
   useEffect(() => {
-    fetcher.load("/resource/friend-requests");
-    if (window) {
-      const onWindowClick = () => {
-        setWindowOpen(false);
-      };
-      window.addEventListener("click", onWindowClick);
-      return () => {
-        window.removeEventListener("click", onWindowClick);
-      };
+    setPopoverOpen(open);
+    if (open && unreadFriendRequestsCount > 0) {
+      setUnreadFriendRequestsCount(0);
+      socket?.emit("readFriendRequests");
     }
+  }, [open]);
+
+  useEffect(() => {
+    fetcher.load("/resource/friend-requests");
   }, []);
 
   useEffect(() => {
@@ -39,11 +47,11 @@ export const FriendRequests = () => {
     }) => {
       setFriendRequests((friendRequests) => {
         return [
-          { read: windowOpen, user: { id, username, profile_picture_uuid } },
+          { read: popoverOpen, user: { id, username, profile_picture_uuid } },
           ...friendRequests,
         ];
       });
-      if (windowOpen) {
+      if (popoverOpen) {
         socket?.emit("readFriendRequests");
       } else {
         setUnreadFriendRequestsCount((count) => {
@@ -100,16 +108,6 @@ export const FriendRequests = () => {
     }
   }, [fetcher.data]);
 
-  const onWindowOpen = () => {
-    if (!windowOpen) {
-      setUnreadFriendRequestsCount(0);
-      socket?.emit("readFriendRequests");
-    }
-    setWindowOpen((open) => {
-      return !open;
-    });
-  };
-
   const handleFriendRequest = (id: string, accepted: boolean) => {
     const friendRequest = friendRequests.find((fr) => fr.user.id === id);
     setFriendRequests((friendRequests) => {
@@ -148,26 +146,62 @@ export const FriendRequests = () => {
         }
       });
   };
-
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-    <div className="relative h-fit" onClick={(e) => e.stopPropagation()}>
-      <button className="h-fit relative" onClick={onWindowOpen}>
-        <UsersIcon
-          className={`h-8 w-8 ${windowOpen ? "fill-black" : "fill-white"}`}
-        />
-        {unreadFriendRequestsCount > 0 && (
-          <div className="font-bold text-sm rounded-md px-1 h-fit bg-red-500 text-white absolute top-1/2 left-3/4">
-            {unreadFriendRequestsCount}
-          </div>
-        )}
-      </button>
-      {windowOpen && (
-        <div
-          className={`flex flex-col rounded-md absolute top-full right-0 min-w-[28rem] ${
-            friendRequests.length > 2 ? "h-[9rem]" : "h-fit"
-          } bg-white border-black overflow-y-auto scrollbar-thin`}
-        >
+    <>
+      <PopoverButton
+        className="h-fit w-full flex items-center space-x-4 p-2 outline-none rounded-lg hover:bg-stone-100 [&>div>svg]:hover:scale-110"
+        onMouseDown={(e) => {
+          e.currentTarget.classList.remove("[&>div>svg]:hover:scale-110");
+          e.currentTarget.classList.add(
+            "text-stone-300",
+            "[&>div>svg]:scale-100",
+            "[&>div>svg]:fill-stone-300",
+            "[&>div>svg]:stroke-stone-300"
+          );
+        }}
+        onMouseUp={(e) => {
+          e.currentTarget.classList.remove(
+            "text-stone-300",
+            "[&>div>svg]:scale-100",
+            "[&>div>svg]:fill-stone-300",
+            "[&>div>svg]:stroke-stone-300"
+          );
+          e.currentTarget.classList.add("[&>div>svg]:hover:scale-110");
+        }}
+        onMouseLeave={(e) => {
+          if (e.currentTarget.classList.contains("text-stone-300")) {
+            e.currentTarget.classList.remove(
+              "text-stone-300",
+              "[&>div>svg]:scale-100",
+              "[&>div>svg]:fill-stone-300",
+              "[&>div>svg]:stroke-stone-300"
+            );
+            e.currentTarget.classList.add("[&>div>svg]:hover:scale-110");
+          }
+        }}
+      >
+        <div className="relative">
+          <UsersIcon
+            className={`h-8 w-8 transition-transform duration-150 ${
+              popoverOpen
+                ? "fill-primary stroke-white"
+                : "fill-transparent stroke-primary"
+            }`}
+          />
+          {unreadFriendRequestsCount > 0 && (
+            <div className="font-bold text-sm rounded-md px-1 h-fit bg-red-500 text-white absolute top-1/2 left-3/4">
+              {unreadFriendRequestsCount}
+            </div>
+          )}
+        </div>
+        <div className="text-lg">Friend requests</div>
+      </PopoverButton>
+      <PopoverPanel
+        className={`flex flex-col p-2 rounded-e-3xl absolute top-0 left-full min-w-[28rem] h-svh bg-white border-secondary border-l overflow-y-auto scrollbar-thin`}
+      >
+        <div className="flex flex-col px-2">
+          <div className="text-xl font-semibold py-2">Friend requests</div>
+          <hr className="bg-secondary" />
           {friendRequests.length > 0 ? (
             friendRequests.map((request, idx) => (
               <div
@@ -198,17 +232,13 @@ export const FriendRequests = () => {
                 <div className="ml-4 mr-4 flex space-x-2">
                   <button
                     className="p-1 rounded-full hover:bg-stone-100"
-                    onClick={() =>
-                      handleFriendRequest(request.user.id, true)
-                    }
+                    onClick={() => handleFriendRequest(request.user.id, true)}
                   >
                     <CheckIcon className="h-6 w-6 fill-green-500" />
                   </button>
                   <button
                     className="p-1 rounded-full hover:bg-stone-100"
-                    onClick={() =>
-                      handleFriendRequest(request.user.id, false)
-                    }
+                    onClick={() => handleFriendRequest(request.user.id, false)}
                   >
                     <XMarkIcon className="h-6 w-6 stroke-amber-600" />
                   </button>
@@ -221,7 +251,7 @@ export const FriendRequests = () => {
             </div>
           )}
         </div>
-      )}
-    </div>
+      </PopoverPanel>
+    </>
   );
 };

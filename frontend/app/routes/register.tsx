@@ -7,6 +7,7 @@ import {
 import { Link, useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { zfd } from "zod-form-data";
+import { AnimatedDots } from "~/components/animated-dots";
 import { getCookie } from "~/service/user";
 
 const registrationSchema = zfd.formData({
@@ -149,7 +150,13 @@ export default () => {
           }`}
           disabled={disabled || !passwordsEqual}
         >
-          Register
+          {fetcher.state == "submitting" ? (
+            <div className="flex justify-center items-center">
+              <AnimatedDots />
+            </div>
+          ) : (
+            "Log in"
+          )}
         </button>
 
         <div

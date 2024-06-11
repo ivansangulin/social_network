@@ -143,3 +143,16 @@
   width: 0;
   height: 0;
 }
+
+@keyframes progress-bar-width {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-progress-bar {
+  animation: progress-bar-width 1s;
+}

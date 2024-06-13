@@ -15,8 +15,8 @@ const commentRouter = Router();
 
 commentRouter.post(
   "/",
-  check("postId").isString().trim().notEmpty(),
-  check("text").isString().trim().notEmpty(),
+  check("postId").exists({ values: "falsy" }).isString().trim().notEmpty(),
+  check("text").exists({ values: "falsy" }).isString().trim().notEmpty(),
   check("commentId").optional().isString(),
   Validate,
   async (req: Request, res: Response) => {
@@ -47,8 +47,8 @@ commentRouter.post(
 
 commentRouter.post(
   "/like",
-  check("commentId").isString().trim().notEmpty(),
-  check("liked").isBoolean().notEmpty(),
+  check("commentId").exists({ values: "falsy" }).isString().trim().notEmpty(),
+  check("liked").exists({ values: "falsy" }).isBoolean().notEmpty(),
   Validate,
   async (req: Request, res: Response) => {
     const userId = req.userId as string;
@@ -73,7 +73,7 @@ commentRouter.post(
 
 commentRouter.get(
   "/",
-  check("postId").isString().trim().notEmpty(),
+  check("postId").exists({ values: "falsy" }).isString().trim().notEmpty(),
   check("cursor").optional().isString(),
   Validate,
   async (req: Request, res: Response) => {
@@ -95,7 +95,7 @@ commentRouter.get(
 
 commentRouter.get(
   "/replies",
-  check("commentId").isString().trim().notEmpty(),
+  check("commentId").exists({ values: "falsy" }).isString().trim().notEmpty(),
   check("cursor").optional().isString(),
   Validate,
   async (req: Request, res: Response) => {

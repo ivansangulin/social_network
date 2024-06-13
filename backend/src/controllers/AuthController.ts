@@ -36,13 +36,23 @@ export type UserLoginType = z.infer<typeof userLoginSchema>;
 
 userRouter.post(
   "/register",
-  check("username").trim().notEmpty().withMessage("Username can't be empty"),
+  check("username")
+    .exists({ values: "falsy" })
+    .trim()
+    .notEmpty()
+    .withMessage("Username can't be empty"),
   check("email")
+    .exists({ values: "falsy" })
     .isEmail()
     .withMessage("Enter a valid email address")
     .normalizeEmail(),
-  check("password").trim().notEmpty().withMessage("Password can't be empty"),
+  check("password")
+    .exists({ values: "falsy" })
+    .trim()
+    .notEmpty()
+    .withMessage("Password can't be empty"),
   check("repeatedPassword")
+    .exists({ values: "falsy" })
     .trim()
     .notEmpty()
     .withMessage("Repeated password can't be empty"),
@@ -64,7 +74,11 @@ userRouter.post(
 
 userRouter.post(
   "/login",
-  check("password").trim().notEmpty().withMessage("Password can't be empty"),
+  check("password")
+    .exists({ values: "falsy" })
+    .trim()
+    .notEmpty()
+    .withMessage("Password can't be empty"),
   oneOf(
     [
       check("email")
@@ -114,7 +128,7 @@ userRouter.get("/me", RequiresAuth, async (req: Request, res: Response) => {
 userRouter.get(
   "/user-data",
   RequiresAuth,
-  check("username").isString().trim().notEmpty(),
+  check("username").exists({ values: "falsy" }).isString().trim().notEmpty(),
   Validate,
   async (req: Request, res: Response) => {
     const myId = req.userId as string;

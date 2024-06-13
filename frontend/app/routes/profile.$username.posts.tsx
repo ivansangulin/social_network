@@ -2,35 +2,28 @@ import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
 import { useState, useRef, useEffect } from "react";
 import { Post } from "~/components/post";
+import { useUserData } from "~/hooks/useUserData";
 import { SetPostsContext } from "~/root";
-import {
-  getMyPosts,
-  getUserPosts,
-  PostPaging,
-  Post as PostType,
-} from "~/service/post";
+import { getUserPosts, PostPaging, Post as PostType } from "~/service/post";
 import { me } from "~/service/user";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const user = await me(request);
+  const searchParams = new URL(request.url).searchParams;
+  const cursor = searchParams.get("cursor");
+  const { username } = params;
+  const [user, userPostsPaging] = await Promise.all([
+    me(request),
+    getUserPosts(request, username!, cursor),
+  ]);
   if (!user) {
     return redirect("/login");
   }
-  const { username } = params;
-  let userPostsPaging;
-  if (username === user.username) {
-    userPostsPaging = await getMyPosts(request, null);
-  } else {
-    userPostsPaging = await getUserPosts(request, username!, null);
-  }
-  return json({
-    userPostsPaging,
-    user,
-  });
+  return json(userPostsPaging);
 };
 
 export default () => {
-  const { userPostsPaging, user } = useLoaderData<typeof loader>();
+  const userPostsPaging = useLoaderData<typeof loader>();
+  const user = useUserData()!;
   const [posts, setPosts] = useState<PostType[]>(userPostsPaging?.posts ?? []);
   const cursor = useRef<string>(userPostsPaging?.cursor ?? "");
   const fetching = useRef<boolean>(false);
@@ -53,11 +46,7 @@ export default () => {
         return;
       }
       fetching.current = true;
-      fetcher.load(
-        `/resource/get-user-posts?cursor=${cursor.current}${
-          !myProfile ? `&username=${username}` : ""
-        }`
-      );
+      fetcher.load(`/profile/${username}/posts?cursor=${cursor.current}`);
     };
     if (window) {
       window.addEventListener("scroll", handleScroll);

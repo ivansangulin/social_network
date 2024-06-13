@@ -1,7 +1,6 @@
 import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { Form, useFetcher, useLoaderData } from "@remix-run/react";
 import { useState, useEffect, useRef, useContext, FormEvent } from "react";
-import { Chats } from "~/components/chat";
 import { Post } from "~/components/post";
 import { SetPostsContext, SocketContext } from "~/root";
 import { Friend, getMyFriends } from "~/service/friendship";
@@ -32,31 +31,10 @@ export type ChatData = {
 };
 
 export default function Index() {
-  const [chats, setChats] = useState<ChatData[]>([]);
   return (
     <div className="grow flex justify-center">
       <div className="w-6/12 relative flex justify-center">
         <Posts />
-        <Chats
-          chats={chats}
-          onDeleteChat={(id) => {
-            setChats((chats) => {
-              return [...chats.filter((c) => c.friend.id !== id)];
-            });
-          }}
-          setFirst={(id) => {
-            const el = chats.find((c) => c.friend.id === id)!;
-            setChats([el, ...chats.filter((c) => c.friend.id !== id)]);
-          }}
-          onNewChat={(friend) => {
-            setChats((chats) => {
-              return [
-                { defaultOpen: false, notification: true, friend },
-                ...chats,
-              ];
-            });
-          }}
-        />
       </div>
     </div>
   );

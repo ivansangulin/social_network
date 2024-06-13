@@ -104,64 +104,66 @@ export const Notifications = () => {
             </div>
             <div className="text-lg">Notifications</div>
           </PopoverButton>
-          <PopoverPanel className="flex flex-col p-2 rounded-e-3xl absolute top-0 left-full min-w-[28rem] h-svh bg-white border-secondary border-l overflow-y-auto scrollbar-thin">
+          <PopoverPanel className="flex flex-col p-2 rounded-e-3xl absolute top-0 left-full min-w-[28rem] h-svh bg-white border-secondary border-l">
             {({ close }) => (
               <div className="flex flex-col px-2">
                 <div className="text-xl font-semibold py-2">Notifications</div>
                 <hr className="bg-secondary" />
-                {notifications.length > 0 ? (
-                  notifications.map((notification) => (
-                    <div
-                      className="py-4 flex space-x-2 justify-between items-center"
-                      key={notification.id}
-                    >
-                      <div className="flex items-center space-x-2">
-                        {notification.sender.profile_picture_uuid &&
-                        backendUrl ? (
-                          <img
-                            alt=""
-                            src={`${backendUrl}/image/profile_picture/${notification.sender.profile_picture_uuid}`}
-                            className="object-cover rounded-full aspect-square max-w-[40px]"
-                          />
-                        ) : (
-                          <img
-                            alt=""
-                            src="/images/default_profile_picture.png"
-                            className="max-w-[40px]"
-                          />
-                        )}
-                        <div className="flex flex-col">
-                          <div className="">
-                            <Link
-                              to={`/profile/${notification.sender.username}/posts`}
-                              className="font-bold hover:underline break-words"
-                              onClick={() => close()}
-                            >
-                              {notification.sender.username}{" "}
-                            </Link>
-                            {notification.message}
-                          </div>
-                          <div className="">
-                            {notification.createdDescriptive}
+                <div className="flex flex-col overflow-y-auto scrollbar-thin">
+                  {notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                      <div
+                        className="py-4 flex space-x-2 justify-between items-center"
+                        key={notification.id}
+                      >
+                        <div className="flex items-center space-x-2">
+                          {notification.sender.profile_picture_uuid &&
+                          backendUrl ? (
+                            <img
+                              alt=""
+                              src={`${backendUrl}/image/profile_picture/${notification.sender.profile_picture_uuid}`}
+                              className="object-cover rounded-full aspect-square max-w-[40px]"
+                            />
+                          ) : (
+                            <img
+                              alt=""
+                              src="/images/default_profile_picture.png"
+                              className="max-w-[40px]"
+                            />
+                          )}
+                          <div className="flex flex-col">
+                            <div className="">
+                              <Link
+                                to={`/profile/${notification.sender.username}/posts`}
+                                className="font-bold hover:underline break-words"
+                                onClick={() => close()}
+                              >
+                                {notification.sender.username}{" "}
+                              </Link>
+                              {notification.message}
+                            </div>
+                            <div className="">
+                              {notification.createdDescriptive}
+                            </div>
                           </div>
                         </div>
+                        {notification.post_id && (
+                          <Link
+                            to={`/post/${notification.post_id}`}
+                            className="self-end text-sky-600 hover:underline"
+                            onClick={() => close()}
+                          >
+                            View post
+                          </Link>
+                        )}
                       </div>
-                      {notification.post_id && (
-                        <Link
-                          to={`/post/${notification.post_id}`}
-                          className="self-end text-sky-600 hover:underline"
-                          onClick={() => close()}
-                        >
-                          View post
-                        </Link>
-                      )}
+                    ))
+                  ) : (
+                    <div className="px-2 py-4 text-center w-full text-lg">
+                      You have no new notifications!
                     </div>
-                  ))
-                ) : (
-                  <div className="px-2 py-4 text-center w-full text-lg">
-                    You have no new notifications!
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </PopoverPanel>

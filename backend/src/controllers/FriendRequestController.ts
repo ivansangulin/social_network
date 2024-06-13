@@ -24,7 +24,7 @@ friendRequestRouter.get("/", async (req: Request, res: Response) => {
 
 friendRequestRouter.post(
   "/add",
-  check("friendId").isString().trim().notEmpty(),
+  check("friendId").exists({ values: "falsy" }).isString().trim().notEmpty(),
   Validate,
   async (req, res) => {
     const userId = req.userId as string;
@@ -41,7 +41,7 @@ friendRequestRouter.post(
 
 friendRequestRouter.post(
   "/remove",
-  check("friendId").isString().trim().notEmpty(),
+  check("friendId").exists({ values: "falsy" }).isString().trim().notEmpty(),
   Validate,
   async (req, res) => {
     const userId = req.userId as string;
@@ -58,8 +58,8 @@ friendRequestRouter.post(
 
 friendRequestRouter.post(
   "/handle",
-  check("friendId").isString().trim().notEmpty(),
-  check("accepted").isBoolean().notEmpty(),
+  check("friendId").exists({ values: "falsy" }).isString().trim().notEmpty(),
+  check("accepted").exists({ values: "falsy" }).isBoolean().notEmpty(),
   Validate,
   async (req, res) => {
     const userId = req.userId as string;

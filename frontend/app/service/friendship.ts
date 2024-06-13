@@ -1,14 +1,16 @@
 import { z } from "zod";
 import { getCookie } from "./user";
 
-const friendSchema = z.object({
+export const friendSchema = z.object({
   username: z.string(),
   id: z.string(),
   profile_picture_uuid: z.string().nullish(),
-  user_status: z.object({
-    is_online: z.boolean(),
-    last_seen: z.string(),
-  }),
+  user_status: z
+    .object({
+      is_online: z.boolean(),
+      last_seen: z.string(),
+    })
+    .nullish(),
 });
 export const friendsPagingSchema = z.object({
   count: z.number(),

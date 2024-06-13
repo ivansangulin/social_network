@@ -4,7 +4,7 @@ import {
   LoaderFunctionArgs,
   redirect,
 } from "@remix-run/node";
-import { Link, useFetcher } from "@remix-run/react";
+import { Link, useFetcher, useNavigation } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { zfd } from "zod-form-data";
 import { AnimatedDots } from "~/components/animated-dots";
@@ -59,6 +59,7 @@ export const loader = ({ request }: LoaderFunctionArgs) => {
 
 export default () => {
   const fetcher = useFetcher();
+  const navigation = useNavigation();
   const actionMessage = fetcher.data as string | null;
   const [disabled, setDisabled] = useState<boolean>(true);
 
@@ -109,7 +110,7 @@ export default () => {
           }`}
           disabled={disabled}
         >
-          {fetcher.state == "submitting" ? (
+          {navigation.state !== "idle" || fetcher.state === "submitting" ? (
             <div className="flex justify-center items-center">
               <AnimatedDots />
             </div>

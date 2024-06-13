@@ -8,22 +8,24 @@ generator client {
 }
 
 model User {
-  id                   String          @id @default(auto()) @map("_id") @db.ObjectId
-  username             String          @unique
-  email                String          @unique
+  id                   String             @id @default(auto()) @map("_id") @db.ObjectId
+  username             String             @unique
+  email                String             @unique
   password             String
   profile_picture_uuid String?
   locked_profile       Boolean
-  friendshipToFriend   Friendship[]    @relation("friendRelation")
-  friendshipToUser     Friendship[]    @relation("userRelation")
+  friendshipToFriend   Friendship[]       @relation("friendRelation")
+  friendshipToUser     Friendship[]       @relation("userRelation")
   posts                Post[]
   user_status          UserStatus?
-  friendRequestFrom    FriendRequest[] @relation("fromUser")
-  friendRequestTo      FriendRequest[] @relation("toUser")
+  friendRequestFrom    FriendRequest[]    @relation("fromUser")
+  friendRequestTo      FriendRequest[]    @relation("toUser")
   Like                 PostLike[]
   Notification         Notification[]
   Comment              Comment[]
   CommentLike          CommentLike[]
+  ChatParticipants     ChatParticipants[]
+  Message              Message[]
 
   @@map("users")
 }
@@ -80,22 +82,26 @@ model Comment {
 }
 
 model Message {
-  id           String    @id @default(auto()) @map("_id") @db.ObjectId
-  created      DateTime  @default(now())
-  from_user_id String    @db.ObjectId
-  to_user_id   String    @db.ObjectId
-  message      String
-  read_at      DateTime?
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  created   DateTime  @default(now())
+  message   String
+  sender_id String    @db.ObjectId
+  sender    User      @relation(fields: [sender_id], references: [id])
+  chat_id   String    @db.ObjectId
+  chat      Chat      @relation(fields: [chat_id], references: [id])
+  read_at   DateTime?
 
   @@map("messages")
 }
 
 model UserStatus {
-  user_id     String   @id @map("_id") @db.ObjectId
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  user_id     String   @db.ObjectId
   user        User     @relation(fields: [user_id], references: [id])
   is_online   Boolean  @default(true)
   last_active DateTime @default(now())
 
+  @@unique([user_id])
   @@map("user_status")
 }
 
@@ -133,4 +139,23 @@ model CommentLike {
   user       User    @relation(fields: [user_id], references: [id])
 
   @@map("comment_likes")
+}
+
+model Chat {
+  id           String             @id @default(auto()) @map("_id") @db.ObjectId
+  participants ChatParticipants[]
+  messages     Message[]
+
+  @@map("chats")
+}
+
+model ChatParticipants {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  user_id String @db.ObjectId
+  user    User   @relation(fields: [user_id], references: [id])
+  chat_id String @db.ObjectId
+  chat    Chat   @relation(fields: [chat_id], references: [id])
+
+  @@unique([user_id, chat_id])
+  @@map("chat_participants")
 }

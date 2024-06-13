@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const myDataSchema = z.object({
+  id: z.string(),
   username: z.string(),
   email: z.string(),
   profile_picture_uuid: z.string().nullish(),

@@ -58,7 +58,12 @@ export const findUserByUsernameOrEmail = async (auth: string) => {
 export const findMyself = async (id: string) => {
   const user = await prisma.user.findFirstOrThrow({
     where: { id: id },
-    select: { email: true, username: true, profile_picture_uuid: true },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      profile_picture_uuid: true,
+    },
   });
   return user;
 };
@@ -86,8 +91,11 @@ export const myMessagingData = async (userId: string) => {
 
 export const updateStatus = async (userId: string, status: boolean) => {
   try {
-    await prisma.userStatus.update({
-      data: {
+    await prisma.userStatus.upsert({
+      create: {
+        user_id: userId,
+      },
+      update: {
         is_online: status,
       },
       where: {

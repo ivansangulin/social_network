@@ -1,6 +1,10 @@
 import { io, ISocket } from "../app";
 import { readFriendRequests } from "../services/FriendRequestService";
-import { createMessage, readMessages } from "../services/MessagingService";
+import {
+  createMessage,
+  getChatParticipants,
+  readMessages,
+} from "../services/MessagingService";
 import { readNotifications } from "../services/NotificationService";
 import { createPost } from "../services/PostService";
 import { updateStatus } from "../services/UserService";
@@ -14,11 +18,11 @@ export const connectSocket = () => {
 
     const messageListener = async (
       {
-        friendId,
+        chatId,
         message,
         created,
       }: {
-        friendId: string;
+        chatId: string;
         message: string;
         created: string;
       },
@@ -26,21 +30,23 @@ export const connectSocket = () => {
     ) => {
       try {
         const createdDate = new Date(created);
-        const myData = await createMessage(
-          userId,
-          friendId,
-          message,
-          createdDate
-        );
-        io.to(friendId).emit(
-          "message",
-          {
-            sender: userId,
-            message,
-            created,
-          },
-          myData
-        );
+        const [{ myData, unreadCount }, participants] = await Promise.all([
+          createMessage(userId, chatId, message, createdDate),
+          getChatParticipants(userId, chatId),
+        ]);
+        participants.forEach((p) => {
+          io.to(p.user_id).emit(
+            "message",
+            chatId,
+            {
+              sender_id: userId,
+              message,
+              created,
+            },
+            myData,
+            unreadCount
+          );
+        });
         if (ack) ack(true);
       } catch (err) {
         console.log(err);
@@ -66,29 +72,37 @@ export const connectSocket = () => {
     socket.on("newPost", postListener);
 
     const typingListener = async ({
-      friendId,
+      chatId,
       typing,
     }: {
-      friendId: string;
+      chatId: string;
       typing: boolean;
     }) => {
-      io.to(friendId).emit("userTyping", {
-        friendId: userId,
-        typing: typing,
+      const participants = await getChatParticipants(userId, chatId);
+      participants.forEach((p) => {
+        io.to(p.user_id).emit("userTyping", {
+          chatId: chatId,
+          typing: typing,
+        });
       });
     };
     socket.on("userTyping", typingListener);
 
     const readMessagesListener = async ({
-      friendId,
+      chatId,
       readAt,
     }: {
-      friendId: string;
+      chatId: string;
       readAt: string;
     }) => {
       try {
-        await readMessages(userId, friendId, new Date(readAt));
-        io.to(friendId).emit("readMessages", { friendId: userId });
+        const [participants] = await Promise.all([
+          getChatParticipants(userId, chatId),
+          readMessages(userId, chatId, new Date(readAt)),
+        ]);
+        participants.forEach((p) => {
+          io.to(p.user_id).emit("readMessages", { chatId: chatId });
+        });
       } catch (err) {
         console.log(err);
       }

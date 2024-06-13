@@ -7,10 +7,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return redirect("/login");
   }
   const params = new URL(request.url).searchParams;
-  const friendId = params.get("friendId");
+  const chatId = params.get("chatId");
   const cursor = params.get("cursor");
-  if (friendId) {
-    const messages = await getMessages(friendId, cursor, request);
+  if (chatId) {
+    const messages = await getMessages(chatId, cursor, request);
     return messages;
   }
 

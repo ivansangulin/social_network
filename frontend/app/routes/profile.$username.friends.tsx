@@ -105,7 +105,7 @@ export default () => {
         <input
           type="text"
           className="rounded-lg min-h-12 px-4 border border-slate-300 w-full"
-          placeholder="Search friends by username..."
+          placeholder="Search..."
           onChange={handleNewSearch}
         />
         {fetcher.state === "loading" && (

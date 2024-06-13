@@ -89,33 +89,6 @@ export type PostPaging = z.infer<typeof postPagingSchema>;
 export type CommentType = z.infer<typeof commentSchema>;
 export type Reply = z.infer<typeof replySchema>;
 
-export const getMyPosts = async (request: Request, cursor: string | null) => {
-  const cookie = getCookie(request);
-  if (!cookie) {
-    return null;
-  }
-  try {
-    const userPostsResponse = await fetch(
-      `${process.env.BACKEND_URL}/post/my-posts?cursor=${cursor ?? ""}`,
-      {
-        method: "GET",
-        headers: {
-          Cookie: cookie,
-        },
-      }
-    );
-    if (!userPostsResponse.ok) {
-      return null;
-    }
-    const userPostsPaging = await postPagingSchema.parse(
-      await userPostsResponse.json()
-    );
-    return userPostsPaging;
-  } catch (err) {
-    return null;
-  }
-};
-
 export const getMainPagePosts = async (
   request: Request,
   cursor: string | null

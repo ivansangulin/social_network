@@ -7,7 +7,7 @@ export const getFriends = async (
   cursor: string | undefined,
   search: string | undefined | null
 ) => {
-  const [count, friends] = await prisma.$transaction([
+  const [count, friends] = await Promise.all([
     prisma.friendship.count({
       where: {
         AND: [
@@ -85,7 +85,7 @@ export const getFriends = async (
                   {
                     friend: {
                       username: {
-                        contains: `%${search.toLowerCase()}%`,
+                        contains: `${search.toLowerCase()}`,
                         mode: "insensitive",
                       },
                     },
@@ -96,7 +96,7 @@ export const getFriends = async (
                   {
                     user: {
                       username: {
-                        contains: `%${search.toLowerCase()}%`,
+                        contains: `${search.toLowerCase()}`,
                         mode: "insensitive",
                       },
                     },

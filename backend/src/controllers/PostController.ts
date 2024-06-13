@@ -16,21 +16,6 @@ import { findUserDataFromUsername } from "../services/UserService";
 
 const postRouter = Router();
 
-postRouter.get("/my-posts", async (req: Request, res: Response) => {
-  const userId = req.userId as string;
-  const cursor =
-    typeof req.query.cursor === "string"
-      ? (req.query.cursor as string)
-      : undefined;
-
-  try {
-    const userPostPaging = await getUserPosts(userId, cursor);
-    return res.status(200).json(userPostPaging);
-  } catch (err) {
-    return res.status(500).send("Error occured fetching posts!");
-  }
-});
-
 postRouter.get("/main-page-posts", async (req: Request, res: Response) => {
   const userId = req.userId as string;
   const cursor =
@@ -48,7 +33,7 @@ postRouter.get("/main-page-posts", async (req: Request, res: Response) => {
 
 postRouter.get(
   "/user-posts",
-  check("username").isString().trim().notEmpty(),
+  check("username").exists({ values: "falsy" }).isString().trim().notEmpty(),
   Validate,
   async (req: Request, res: Response) => {
     const myId = req.userId as string;
@@ -63,7 +48,7 @@ postRouter.get(
         return res.status(404).send("User doesn't exist!");
       }
       const friends = await areFriends(myId, userData.id);
-      if (friends || !userData.locked_profile) {
+      if (friends || !userData.locked_profile || myId === userData.id) {
         const posts = await getUserPosts(userData.id, cursor);
         return res.status(200).json(posts);
       }
@@ -79,8 +64,8 @@ postRouter.get(
 
 postRouter.post(
   "/like",
-  check("liked").isBoolean().notEmpty(),
-  check("postId").isString().trim().notEmpty(),
+  check("liked").exists({ values: "falsy" }).isBoolean().notEmpty(),
+  check("postId").exists({ values: "falsy" }).isString().trim().notEmpty(),
   Validate,
   async (req, res) => {
     const userId = req.userId as string;
@@ -105,7 +90,7 @@ postRouter.post(
 
 postRouter.get(
   "/",
-  check("postId").isString().trim().notEmpty(),
+  check("postId").exists({ values: "falsy" }).isString().trim().notEmpty(),
   Validate,
   async (req, res) => {
     const myId = req.userId as string;
@@ -131,7 +116,7 @@ postRouter.get(
 
 postRouter.post(
   "/share",
-  check("postId").isString().trim().notEmpty(),
+  check("postId").exists({ values: "falsy" }).isString().trim().notEmpty(),
   check("text").isString().trim().optional(),
   Validate,
   async (req, res) => {

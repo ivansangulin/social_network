@@ -24,7 +24,7 @@ friendshipRouter.get("/my-friends", async (req: Request, res: Response) => {
 
 friendshipRouter.get(
   "/user-friends",
-  check("username").isString().trim().notEmpty(),
+  check("username").exists({ values: "falsy" }).isString().trim().notEmpty(),
   async (req: Request, res: Response) => {
     const myId = req.userId as string;
     const username = req.query.username as string;

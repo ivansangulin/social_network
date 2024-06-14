@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import {
   userLoginSchema,
   userRegistrationSchema,
-} from "../controllers/AuthController";
+} from "../controllers/UserController";
 import {
   checkIfEmailExists,
   checkIfUsernameExists,

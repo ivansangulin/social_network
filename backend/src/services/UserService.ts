@@ -1,4 +1,4 @@
-import { UserRegistrationType } from "../controllers/AuthController";
+import { UserRegistrationType } from "../controllers/UserController";
 import bcrypt from "bcrypt";
 import { prisma } from "../utils/client";
 

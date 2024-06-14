@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-import userRouter from "./controllers/AuthController";
+import userRouter from "./controllers/UserController";
 import cookieParser from "cookie-parser";
 import { json } from "body-parser";
 import friendshipRouter from "./controllers/FriendshipController";

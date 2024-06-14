@@ -232,22 +232,21 @@ export const Post = ({ post }: { post: PostType }) => {
           });
         } else {
           if (!parentComment) {
-            const comment = { ...newComment };
-            comment.id = id;
+            const comment = { ...newComment, id: id };
             setComments((prevComments) => {
               return [...prevComments.filter((c) => c.id !== tempId), comment];
             });
           } else {
             const newReply = { ...newComment };
             newReply.id = id;
-            parentComment.replies = parentComment.replies!.filter(
-              (r) => r.id !== tempId
-            );
-            parentComment.replies.push(newReply);
+            const newReplies = [
+              ...parentComment.replies!.filter((r) => r.id !== tempId),
+            ];
+            newReplies.push(newReply);
             setComments((prevComments) => {
               return [
                 ...prevComments.slice(0, parentIndex),
-                parentComment,
+                { ...parentComment, replies: newReplies },
                 ...prevComments.slice(parentIndex + 1),
               ];
             });
@@ -278,7 +277,6 @@ export const Post = ({ post }: { post: PostType }) => {
         });
       });
   };
-
   return (
     <div className="flex flex-col space-y-4 p-4 border border-slate-300 rounded-lg bg-white">
       <div className="flex flex-col space-y-0.5">
@@ -300,7 +298,7 @@ export const Post = ({ post }: { post: PostType }) => {
             <div className="flex space-x-2 items-baseline">
               <Link
                 className="text-lg font-semibold hover:underline"
-                to={`/profile/${post.user.username}`}
+                to={`/profile/${post.user.username}/posts`}
               >
                 {post.user.username}
               </Link>
@@ -333,9 +331,9 @@ export const Post = ({ post }: { post: PostType }) => {
               <div className="flex flex-col">
                 <Link
                   className="text-lg font-semibold hover:underline"
-                  to={`/profile/${post.parent.user.username}`}
+                  to={`/profile/${post.parent.user.username}/posts`}
                 >
-                  {post.user.username}
+                  {post.parent.user.username}
                 </Link>
                 <div className="text-sm">{post.parent.createdLocalDate}</div>
               </div>
@@ -484,6 +482,10 @@ const Comment = ({
   );
 
   useEffect(() => {
+    if (comment.replies) setReplies(comment.replies);
+  }, [comment.replies]);
+
+  useEffect(() => {
     const data = fetcher.data as RepliesPaging | null;
     if (data && comment._count.replies) {
       cursor.current = data.cursor;
@@ -563,7 +565,7 @@ const Comment = ({
         <div className="border rounded-2xl py-1 px-3 flex flex-col space-x-4 bg-secondary w-fit">
           <Link
             className="font-semibold hover:underline"
-            to={`/profile/${comment.user.username}`}
+            to={`/profile/${comment.user.username}/posts`}
           >
             {comment.user.username}
           </Link>

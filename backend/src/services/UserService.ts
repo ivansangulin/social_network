@@ -121,3 +121,28 @@ export const findUserDataFromUsername = async (username: string) => {
 
   return userData;
 };
+
+export const changeProfilePicture = async (
+  userId: string,
+  fileName: string
+) => {
+  await prisma.user.update({
+    data: {
+      profile_picture_uuid: fileName,
+    },
+    where: {
+      id: userId,
+    },
+  });
+};
+
+export const deleteProfilePicture = async (userId: string) => {
+  await prisma.user.update({
+    data: {
+      profile_picture_uuid: null,
+    },
+    where: {
+      id: userId,
+    },
+  });
+};

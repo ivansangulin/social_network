@@ -108,7 +108,7 @@ export const Notifications = () => {
             {({ close }) => (
               <div className="flex flex-col px-2">
                 <div className="text-xl font-semibold py-2">Notifications</div>
-                <hr className="bg-secondary" />
+                <hr />
                 <div className="flex flex-col overflow-y-auto scrollbar-thin">
                   {notifications.length > 0 ? (
                     notifications.map((notification) => (

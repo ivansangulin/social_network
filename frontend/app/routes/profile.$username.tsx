@@ -17,11 +17,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     return redirect("/login");
   }
   if (username === myData.username) {
-    return json({ myData, backendUrl: process.env.BACKEND_URL });
+    return json({ myData });
   } else {
     const { userData, error } = await getUserProfileData(request, username!);
     if (userData && userData) {
-      return json({ userData, backendUrl: process.env.BACKEND_URL });
+      return json({ userData });
     } else {
       return json({ error });
     }
@@ -32,21 +32,19 @@ export default () => {
   const {
     myData,
     userData,
-    backendUrl,
     error,
   }: {
     myData?: MyData;
     userData?: UserData;
-    backendUrl: string;
     error?: ErrorType;
   } = useLoaderData<typeof loader>();
 
   return (
     <>
       {myData ? (
-        <MyProfile user={myData} backendUrl={backendUrl} />
+        <MyProfile />
       ) : userData ? (
-        <UserProfile userData={userData} backendUrl={backendUrl} />
+        <UserProfile userData={userData} />
       ) : (
         <div className="grow flex flex-col justify-center items-center space-y-4">
           <div className="text-bold text-6xl">{error?.status}</div>

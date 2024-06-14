@@ -199,7 +199,7 @@ const PopoverContent = ({ open }: { open: boolean }) => {
       <PopoverPanel className="flex flex-col p-2 rounded-e-3xl absolute top-0 left-full min-w-[28rem] h-svh bg-white border-secondary border-l">
         <div className="flex flex-col px-2">
           <div className="text-xl font-semibold py-2">Friend requests</div>
-          <hr className="bg-secondary" />
+          <hr />
           <div className="flex flex-col overflow-y-auto scrollbar-thin">
             {friendRequests.length > 0 ? (
               friendRequests.map((request) => (

@@ -99,3 +99,52 @@ export const getUserProfileData = async (
     };
   }
 };
+
+export const deleteProfilePicture = async (request: Request) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return false;
+    }
+    const deleteProfilePictureResponse = await fetch(
+      `${process.env.BACKEND_URL}/user/delete-profile-picture`,
+      {
+        method: "DELETE",
+        headers: {
+          Cookie: cookie,
+        },
+      }
+    );
+    return deleteProfilePictureResponse.ok;
+  } catch (err) {
+    console.log(err);
+    return false;
+  }
+};
+
+export const uploadProfilePicture = async (request: Request, photo: Blob) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return false;
+    }
+    const extension = photo.type.split("/")[1];
+    const file = new File([photo], `photo.${extension}`, { type: photo.type });
+    const formData = new FormData();
+    formData.append("photo", file);
+    const uploadProfilePictureResponse = await fetch(
+      `${process.env.BACKEND_URL}/user/upload-profile-picture`,
+      {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+        },
+        body: formData,
+      }
+    );
+    return uploadProfilePictureResponse.ok;
+  } catch (err) {
+    console.log(err);
+    return false;
+  }
+};

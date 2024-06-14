@@ -132,7 +132,7 @@ export const Navbar = () => {
               }
             }}
           >
-            <div className="rounded-full aspect-square max-w-8">
+            <div className="rounded-full overflow-hidden aspect-square max-w-8">
               {user.profile_picture_uuid ? (
                 <img
                   alt=""

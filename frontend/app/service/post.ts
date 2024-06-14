@@ -168,10 +168,7 @@ export const likePost = async (
       },
       body: JSON.stringify({ liked, postId }),
     });
-    if (!likeResponse.ok) {
-      return false;
-    }
-    return true;
+    return likeResponse.ok;
   } catch (err) {
     console.log(err);
     return true;

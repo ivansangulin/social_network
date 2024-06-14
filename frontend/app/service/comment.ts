@@ -68,10 +68,7 @@ export const likeComment = async (
         body: JSON.stringify({ commentId, liked }),
       }
     );
-    if (!likeResponse.ok) {
-      return false;
-    }
-    return true;
+    return likeResponse.ok;
   } catch (err) {
     console.log(err);
     return false;
@@ -86,7 +83,7 @@ export const getComments = async (
   try {
     const cookie = getCookie(request);
     if (!cookie) {
-      return false;
+      return null;
     }
     const commentsResponse = await fetch(
       `${process.env.BACKEND_URL}/comment?postId=${postId}&cursor=${
@@ -118,7 +115,7 @@ export const getReplies = async (
   try {
     const cookie = getCookie(request);
     if (!cookie) {
-      return false;
+      return null;
     }
     const repliesResponse = await fetch(
       `${

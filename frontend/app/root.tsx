@@ -14,7 +14,6 @@ import { me } from "./service/user";
 import {
   createContext,
   Dispatch,
-  ReactNode,
   SetStateAction,
   useEffect,
   useState,

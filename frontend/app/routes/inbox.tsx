@@ -181,7 +181,7 @@ export default () => {
           <div className="text-xl font-semibold">Inbox</div>
           <NewChatDialog onNewChat={onNewActiveChat} />
         </div>
-        <hr className="bg-secondary" />
+        <hr />
         <div className="overflow-y-auto" ref={chatContainerRef}>
           {chats.length > 0 ? (
             chats.map((chat) => (
@@ -414,7 +414,7 @@ const FriendsFinder = ({
   };
   return (
     <>
-      <hr className="bg-secondary" />
+      <hr />
       <div className="w-full flex space-x-4">
         <div className="font-semibold text-lg">Friend:</div>
         <input
@@ -425,7 +425,7 @@ const FriendsFinder = ({
           disabled={fetchingChat}
         />
       </div>
-      <hr className="bg-secondary" />
+      <hr />
       <div className="flex flex-col h-[28rem] overflow-y-auto scrollbar-thin">
         {friends.map((friend) => (
           <button

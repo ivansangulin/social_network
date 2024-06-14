@@ -1,6 +1,8 @@
 import { Request, Response, Router } from "express";
 import z from "zod";
 import {
+  changeProfilePicture,
+  deleteProfilePicture,
   findMyself,
   findUserByUsernameOrEmail,
   findUserDataFromUsername,
@@ -16,6 +18,10 @@ import Validate from "../middleware/validate";
 import { getToken, Token } from "../utils/token";
 import { areFriends } from "../services/FriendshipService";
 import { isFriendRequestPending } from "../services/FriendRequestService";
+import formidable from "formidable";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
+import fs from "fs";
 
 const userRouter = Router();
 
@@ -157,6 +163,80 @@ userRouter.get(
     } catch (err) {
       console.log(err);
       return res.status(500).send("Error occured fetching user data!");
+    }
+  }
+);
+
+userRouter.post(
+  "/upload-profile-picture",
+  RequiresAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.userId as string;
+      const maxFileSize = 8 * 1024 * 1024;
+      const allowedExtensions = [".jpg", ".jpeg", ".png"];
+      const allowedMimeTypes = ["image/jpeg", "image/png"];
+      const form = formidable({
+        uploadDir: path.join(__dirname, "../../public/image"),
+        keepExtensions: true,
+        maxFileSize: maxFileSize,
+        maxFiles: 1,
+      });
+      const [_, files] = await form.parse(req);
+      const file = files.photo instanceof Array ? files.photo[0] : files.photo;
+      if (!file) {
+        return res.status(400).send("No file uploaded");
+      }
+      const extension = path.extname(file.originalFilename || "").toLowerCase();
+      const mimeType = file.mimetype;
+      const oldPath = file.filepath;
+
+      if (
+        !allowedExtensions.includes(extension) ||
+        !mimeType ||
+        !allowedMimeTypes.includes(mimeType)
+      ) {
+        fs.unlinkSync(oldPath);
+        return res.status(400).json({
+          error: "Invalid file type. Only .jpg, .jpeg, and .png are allowed.",
+        });
+      }
+      const newFileName = uuidv4() + extension;
+      const newPath = path.join(__dirname, "../../public/image", newFileName);
+      fs.rename(oldPath, newPath, async (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Failed to save file" });
+        }
+        await changeProfilePicture(userId, newFileName);
+        return res.json({
+          message: "File uploaded successfully",
+          filePath: newPath,
+        });
+      });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Couldn't upload profile picture");
+    }
+  }
+);
+
+userRouter.delete(
+  "/delete-profile-picture",
+  RequiresAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.userId as string;
+      const { profile_picture_uuid } = await findMyself(userId);
+      if (profile_picture_uuid) {
+        fs.unlinkSync(
+          path.join(__dirname, "../../public/image", profile_picture_uuid)
+        );
+        await deleteProfilePicture(userId);
+      }
+      return res.sendStatus(200);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Error occured deleting profile picture");
     }
   }
 );

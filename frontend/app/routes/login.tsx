@@ -4,12 +4,7 @@ import {
   LoaderFunctionArgs,
   redirect,
 } from "@remix-run/node";
-import {
-  Form,
-  Link,
-  useActionData,
-  useNavigation,
-} from "@remix-run/react";
+import { Form, Link, useActionData, useNavigation } from "@remix-run/react";
 import { useState } from "react";
 import { zfd } from "zod-form-data";
 import { AnimatedDots } from "~/components/animated-dots";
@@ -65,48 +60,53 @@ export const loader = ({ request }: LoaderFunctionArgs) => {
 export default () => {
   const navigation = useNavigation();
   const actionMessage = useActionData<typeof action>();
-  const [disabled, setDisabled] = useState<boolean>(true);
+  const inputStyle =
+    "rounded-lg min-h-12 px-4 border border-slate-300 w-full peer outline outline-1 outline-stone-200 border-none focus:outline-blue-500 transition-all duration-200";
+  const labelStyle =
+    "absolute top-1/2 -translate-y-1/2 left-4 text-lg pointer-events-none text-stone-500 bg-white transition-all duration-200 ease-in rounded-lg peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-500 peer-focus:px-2 peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-sm peer-[:not(:placeholder-shown)]:px-2";
 
   return (
     <div className="grow flex flex-col space-y-12 items-center">
       <Form
         method="POST"
-        className="w-2/12 flex flex-col space-y-2 py-20 rounded-xl drop-shadow-2xl"
-        onChange={(e) => {
-          const valid = e.currentTarget.checkValidity();
-          if (valid === disabled) {
-            setDisabled(!valid);
-          }
-        }}
+        className="w-2/12 min-w-96 flex flex-col space-y-2 py-20"
       >
         <div className="text-4xl text-center mb-10">Log in</div>
 
-        <label htmlFor="username" className="text-xl">
-          Username / E-mail:
-        </label>
-        <input
-          className="rounded-lg min-h-12 px-4 border border-slate-300"
-          type="text"
-          name="username"
-          required
-        />
+        <div className="relative w-full">
+          <input
+            className={inputStyle}
+            type="text"
+            name="username"
+            placeholder=""
+            required
+          />
+          <label htmlFor="username" className={labelStyle}>
+            Username / E-mail
+          </label>
+        </div>
 
-        <label htmlFor="password" className="text-xl">
-          Password:
-        </label>
-        <input
-          className="rounded-lg min-h-12 px-4 border border-slate-300"
-          type="password"
-          name="password"
-          required
-        />
+        <div className="relative w-full !mt-8">
+          <input
+            className={inputStyle}
+            type="password"
+            name="password"
+            placeholder=""
+            required
+          />
+          <label htmlFor="password" className={labelStyle}>
+            Password
+          </label>
+        </div>
 
         <button
           type="submit"
           className={`!mt-8 p-2 text-white text-xl bg-primary ${
-            disabled ? "cursor-not-allowed" : "hover:bg-primary-dark"
+            navigation.state !== "idle"
+              ? "cursor-not-allowed"
+              : "hover:bg-primary-dark"
           }`}
-          disabled={disabled}
+          disabled={navigation.state !== "idle"}
         >
           {navigation.state !== "idle" ? (
             <div className="flex justify-center items-center">

@@ -12,7 +12,7 @@ export const Navbar = () => {
 
   return (
     <div className="fixed left-0 z-10">
-      <div className="flex flex-col relative bg-white h-svh min-w-[22rem] py-8 pl-4 pr-8 justify-between items-start">
+      <div className="flex flex-col relative bg-white h-svh min-w-[18rem] 3xl:min-w-[22rem] py-8 pl-4 pr-8 justify-between items-start">
         <div className="flex flex-col items-start space-y-4 w-full">
           <Link className="text-4xl py-4 px-2" to={"/"}>
             Beep-boop

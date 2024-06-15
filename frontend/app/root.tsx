@@ -39,12 +39,19 @@ export type rootLoader = typeof loader;
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
   nextUrl,
+  formAction,
+  formMethod,
+  actionResult,
 }) => {
+  console.log(formAction)
   if (
     currentUrl.pathname.includes("/login") ||
     currentUrl.pathname.includes("/register") ||
     nextUrl.pathname.includes("/login") ||
-    nextUrl.pathname.includes("/register")
+    nextUrl.pathname.includes("/register") ||
+    (formAction === "/profile/edit" &&
+      formMethod === "POST" &&
+      typeof actionResult === "undefined")
   ) {
     return true;
   }

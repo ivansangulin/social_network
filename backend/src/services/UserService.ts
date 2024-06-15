@@ -13,7 +13,7 @@ export const registerUser = async (userDto: UserRegistrationType) => {
         username: userDto.username,
         email: userDto.email,
         password: userDto.password,
-        locked_profile: true,
+        public_profile: false,
       },
     });
     await tx.userStatus.create({
@@ -63,6 +63,7 @@ export const findMyself = async (id: string) => {
       email: true,
       username: true,
       profile_picture_uuid: true,
+      public_profile: true,
     },
   });
   return user;
@@ -111,7 +112,7 @@ export const findUserDataFromUsername = async (username: string) => {
   const userData = await prisma.user.findFirst({
     select: {
       id: true,
-      locked_profile: true,
+      public_profile: true,
       profile_picture_uuid: true,
     },
     where: {
@@ -140,6 +141,24 @@ export const deleteProfilePicture = async (userId: string) => {
   await prisma.user.update({
     data: {
       profile_picture_uuid: null,
+    },
+    where: {
+      id: userId,
+    },
+  });
+};
+
+export const editProfileData = async (
+  userId: string,
+  username: string,
+  email: string,
+  public_profile: boolean
+) => {
+  await prisma.user.update({
+    data: {
+      username: username,
+      email: email,
+      public_profile: public_profile,
     },
     where: {
       id: userId,

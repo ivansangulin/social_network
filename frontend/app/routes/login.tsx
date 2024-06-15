@@ -4,8 +4,13 @@ import {
   LoaderFunctionArgs,
   redirect,
 } from "@remix-run/node";
-import { Link, useFetcher, useNavigation } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import {
+  Form,
+  Link,
+  useActionData,
+  useNavigation,
+} from "@remix-run/react";
+import { useState } from "react";
 import { zfd } from "zod-form-data";
 import { AnimatedDots } from "~/components/animated-dots";
 import { getCookie } from "~/service/user";
@@ -58,22 +63,15 @@ export const loader = ({ request }: LoaderFunctionArgs) => {
 };
 
 export default () => {
-  const fetcher = useFetcher();
   const navigation = useNavigation();
-  const actionMessage = fetcher.data as string | null;
+  const actionMessage = useActionData<typeof action>();
   const [disabled, setDisabled] = useState<boolean>(true);
 
-  useEffect(() => {
-    if (fetcher.state === "submitting") {
-      setDisabled(true);
-    }
-  }, [fetcher.state]);
-
   return (
-    <div className="grow flex flex-col space-y-12 justify-start items-center">
-      <fetcher.Form
+    <div className="grow flex flex-col space-y-12 items-center">
+      <Form
         method="POST"
-        className="flex flex-col space-y-2 px-32 py-20 rounded-xl drop-shadow-2xl relative"
+        className="w-2/12 flex flex-col space-y-2 py-20 rounded-xl drop-shadow-2xl"
         onChange={(e) => {
           const valid = e.currentTarget.checkValidity();
           if (valid === disabled) {
@@ -87,7 +85,7 @@ export default () => {
           Username / E-mail:
         </label>
         <input
-          className="rounded-lg min-w-96 min-h-12 px-4 border border-slate-300"
+          className="rounded-lg min-h-12 px-4 border border-slate-300"
           type="text"
           name="username"
           required
@@ -97,7 +95,7 @@ export default () => {
           Password:
         </label>
         <input
-          className="rounded-lg min-w-96 min-h-12 px-4 border border-slate-300"
+          className="rounded-lg min-h-12 px-4 border border-slate-300"
           type="password"
           name="password"
           required
@@ -110,7 +108,7 @@ export default () => {
           }`}
           disabled={disabled}
         >
-          {navigation.state !== "idle" || fetcher.state === "submitting" ? (
+          {navigation.state !== "idle" ? (
             <div className="flex justify-center items-center">
               <AnimatedDots />
             </div>
@@ -133,7 +131,7 @@ export default () => {
         >
           {"Don't have an account?"}
         </Link>
-      </fetcher.Form>
+      </Form>
     </div>
   );
 };

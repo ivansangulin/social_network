@@ -258,7 +258,7 @@ export const getPost = async (userId: string, postId: string) => {
           select: {
             profile_picture_uuid: true,
             username: true,
-            locked_profile: true,
+            public_profile: true,
           },
         },
         likes: {
@@ -369,7 +369,7 @@ export const canInteractWithPost = async (userId: string, postId: string) => {
     },
   });
   if (
-    !postCreator.locked_profile ||
+    postCreator.public_profile ||
     (await areFriends(userId, postCreator.id)) ||
     postCreator.id === userId
   ) {

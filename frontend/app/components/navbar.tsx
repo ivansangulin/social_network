@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@remix-run/react";
 import { FriendRequests } from "./friend-requests";
 import { Notifications } from "./notifications";
-import { ChatBubbleOval, HomeIcon, LogOutIcon } from "./icons";
+import { ChatBubbleOval, HomeIcon, LogOutIcon, SettingsIcon } from "./icons";
 import { useUserData } from "~/hooks/useUserData";
 import { useServerUrl } from "~/hooks/useServerUrl";
 
@@ -36,7 +36,7 @@ export const Navbar = () => {
                 "[&>svg]:fill-stone-300",
                 "[&>svg]:stroke-stone-300"
               );
-              e.currentTarget.classList.add("[&>div>svg]:hover:scale-110");
+              e.currentTarget.classList.add("[&>svg]:hover:scale-110");
             }}
             onMouseLeave={(e) => {
               if (e.currentTarget.classList.contains("text-stone-300")) {
@@ -46,7 +46,7 @@ export const Navbar = () => {
                   "[&>svg]:fill-stone-300",
                   "[&>svg]:stroke-stone-300"
                 );
-                e.currentTarget.classList.add("[&>div>svg]:hover:scale-110");
+                e.currentTarget.classList.add("[&>svg]:hover:scale-110");
               }
             }}
           >
@@ -76,7 +76,7 @@ export const Navbar = () => {
                 "[&>svg]:fill-stone-300",
                 "[&>svg]:stroke-stone-300"
               );
-              e.currentTarget.classList.add("[&>div>svg]:hover:scale-110");
+              e.currentTarget.classList.add("[&>svg]:hover:scale-110");
             }}
             onMouseLeave={(e) => {
               if (e.currentTarget.classList.contains("text-stone-300")) {
@@ -86,13 +86,15 @@ export const Navbar = () => {
                   "[&>svg]:fill-stone-300",
                   "[&>svg]:stroke-stone-300"
                 );
-                e.currentTarget.classList.add("[&>div>svg]:hover:scale-110");
+                e.currentTarget.classList.add("[&>svg]:hover:scale-110");
               }
             }}
           >
             <ChatBubbleOval
               className={`h-8 w-8 stroke-primary transition-transform duration-150 ${
-                location.pathname === "/inbox" ? "fill-primary stroke-white" : "fill-transparent"
+                location.pathname === "/inbox"
+                  ? "fill-primary stroke-white"
+                  : "fill-transparent"
               }`}
             />
             <div className="text-lg">Messages</div>
@@ -101,38 +103,44 @@ export const Navbar = () => {
           <Notifications />
           <Link
             to={`/profile/${user.username}/posts`}
-            className="flex items-center px-2 space-x-4 rounded-lg hover:bg-stone-100 w-full py-2 [&>div>img]:hover:scale-110 [&>div>img]:transition-transform [&>div>img]:duration-150"
+            className="flex items-center px-2 space-x-4 rounded-lg hover:bg-stone-100 w-full py-2 [&>*:first-child]:hover:scale-110"
             onMouseDown={(e) => {
-              e.currentTarget.classList.remove("[&>div>img]:hover:scale-110");
+              e.currentTarget.classList.remove(
+                "[&>*:first-child]:hover:scale-110"
+              );
               e.currentTarget.classList.add(
                 "text-stone-300",
-                "[&>div>img]:scale-100",
-                "[&>div>img]:fill-stone-300",
-                "[&>div>img]:stroke-stone-300"
+                "[&>*:first-child]:scale-100",
+                "[&>*:first-child]:fill-stone-300",
+                "[&>*:first-child]:stroke-stone-300"
               );
             }}
             onMouseUp={(e) => {
               e.currentTarget.classList.remove(
                 "text-stone-300",
-                "[&>div>img]:scale-100",
-                "[&>div>img]:fill-stone-300",
-                "[&>div>img]:stroke-stone-300"
+                "[&>*:first-child]:scale-100",
+                "[&>*:first-child]:fill-stone-300",
+                "[&>*:first-child]:stroke-stone-300"
               );
-              e.currentTarget.classList.add("[&>div>img]:hover:scale-110");
+              e.currentTarget.classList.add(
+                "[&>*:first-child]:hover:scale-110"
+              );
             }}
             onMouseLeave={(e) => {
               if (e.currentTarget.classList.contains("text-stone-300")) {
                 e.currentTarget.classList.remove(
                   "text-stone-300",
-                  "[&>div>img]:scale-100",
-                  "[&>div>img]:fill-stone-300",
-                  "[&>div>img]:stroke-stone-300"
+                  "[&>*:first-child]:scale-100",
+                  "[&>*:first-child]:fill-stone-300",
+                  "[&>*:first-child]:stroke-stone-300"
                 );
-                e.currentTarget.classList.add("[&>div>img]:hover:scale-110");
+                e.currentTarget.classList.add(
+                  "[&>*:first-child]:hover:scale-110"
+                );
               }
             }}
           >
-            <div className="rounded-full overflow-hidden aspect-square max-w-8">
+            <div className="rounded-full overflow-hidden aspect-square max-w-8 transition-transform duration-150">
               {user.profile_picture_uuid ? (
                 <img
                   alt=""
@@ -144,6 +152,48 @@ export const Navbar = () => {
               )}
             </div>
             <div className="text-lg">Profile</div>
+          </Link>
+          <Link
+            to="/profile/edit"
+            className="flex items-center hover:bg-stone-100 px-2 w-full py-2 space-x-4 rounded-lg [&>svg]:hover:scale-110"
+            onMouseDown={(e) => {
+              e.currentTarget.classList.remove("[&>svg]:hover:scale-110");
+              e.currentTarget.classList.add(
+                "text-stone-300",
+                "[&>svg]:scale-100",
+                "[&>svg]:fill-stone-300",
+                "[&>svg]:stroke-stone-300"
+              );
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.classList.remove(
+                "text-stone-300",
+                "[&>svg]:scale-100",
+                "[&>svg]:fill-stone-300",
+                "[&>svg]:stroke-stone-300"
+              );
+              e.currentTarget.classList.add("[&>svg]:hover:scale-110");
+            }}
+            onMouseLeave={(e) => {
+              if (e.currentTarget.classList.contains("text-stone-300")) {
+                e.currentTarget.classList.remove(
+                  "text-stone-300",
+                  "[&>svg]:scale-100",
+                  "[&>svg]:fill-stone-300",
+                  "[&>svg]:stroke-stone-300"
+                );
+                e.currentTarget.classList.add("[&>svg]:hover:scale-110");
+              }
+            }}
+          >
+            <SettingsIcon
+              className={`h-8 w-8 stroke-primary transition-transform duration-150 ${
+                location.pathname === "/profile/edit"
+                  ? "fill-primary stroke-white"
+                  : "fill-transparent"
+              }`}
+            />
+            <div className="text-lg">Settings</div>
           </Link>
         </div>
         <Link

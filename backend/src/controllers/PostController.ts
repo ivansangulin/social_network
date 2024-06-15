@@ -48,7 +48,7 @@ postRouter.get(
         return res.status(404).send("User doesn't exist!");
       }
       const friends = await areFriends(myId, userData.id);
-      if (friends || !userData.locked_profile || myId === userData.id) {
+      if (friends || userData.public_profile || myId === userData.id) {
         const posts = await getUserPosts(userData.id, cursor);
         return res.status(200).json(posts);
       }
@@ -101,7 +101,7 @@ postRouter.get(
         return res.status(200).json(post);
       }
       const friends = await areFriends(myId, post.user_id);
-      if (friends || !post.user.locked_profile) {
+      if (friends || post.user.public_profile) {
         return res.status(200).json(post);
       }
       return res

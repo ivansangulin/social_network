@@ -9,7 +9,7 @@ import {
   UserPlusIcon,
   XMarkIcon,
 } from "./icons";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useServerUrl } from "~/hooks/useServerUrl";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { useUserData } from "~/hooks/useUserData";
@@ -59,7 +59,7 @@ export const UserProfile = ({ userData }: { userData: UserData }) => {
   const { username } = useParams();
   const backendUrl = useServerUrl()!;
   const [areFriends, setAreFriends] = useState<boolean>(userData.areFriends);
-  const allowedToViewProfile = areFriends || !userData.user.lockedProfile;
+  const allowedToViewProfile = areFriends || userData.user.public_profile;
   const [pendingRequest, setPendingRequest] = useState<boolean>(
     !!userData.friendRequestSenderId
   );
@@ -256,7 +256,7 @@ export const UserProfile = ({ userData }: { userData: UserData }) => {
         )}
       </div>
       {allowedToViewProfile ? (
-        <div className="flex flex-col items-center justify-center space-x-4 w-4/12 py-4">
+        <div className="flex flex-col items-center justify-center space-x-4 w-6/12 py-4">
           <Outlet />
         </div>
       ) : (
@@ -269,13 +269,19 @@ export const UserProfile = ({ userData }: { userData: UserData }) => {
   );
 };
 
-const UploadProfilePictureDialog = () => {
+export const UploadProfilePictureDialog = ({ open }: { open?: boolean }) => {
   const user = useUserData()!;
   const backendUrl = useServerUrl()!;
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [fetching, setFetching] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const inputFileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open !== undefined) {
+      setIsOpen(open);
+    }
+  }, [open]);
 
   const deletePhoto = () => {
     setError(null);

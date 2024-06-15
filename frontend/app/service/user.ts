@@ -1,10 +1,13 @@
+import { json, redirect } from "@remix-run/node";
 import { z } from "zod";
+import { zfd } from "zod-form-data";
 
 const myDataSchema = z.object({
   id: z.string(),
   username: z.string(),
   email: z.string(),
   profile_picture_uuid: z.string().nullish(),
+  public_profile: z.boolean(),
 });
 
 const userDataSchema = z.object({
@@ -12,14 +15,21 @@ const userDataSchema = z.object({
   user: z.object({
     id: z.string(),
     username: z.string(),
-    lockedProfile: z.boolean(),
+    public_profile: z.boolean(),
     profilePictureUuid: z.string().nullish(),
   }),
   friendRequestSenderId: z.string().nullish(),
 });
 
+export const editProfileDataSchema = zfd.formData({
+  username: zfd.text(),
+  email: zfd.text(),
+  public_profile: zfd.checkbox(),
+});
+
 export type MyData = z.infer<typeof myDataSchema>;
 export type UserData = z.infer<typeof userDataSchema>;
+type EditProfileData = z.infer<typeof editProfileDataSchema>;
 
 export const me = async (request: Request) => {
   const cookie = getCookie(request);
@@ -146,5 +156,35 @@ export const uploadProfilePicture = async (request: Request, photo: Blob) => {
   } catch (err) {
     console.log(err);
     return false;
+  }
+};
+
+export const editProfileData = async (
+  request: Request,
+  data: EditProfileData
+) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return json({ error: "Error occured editing data!" });
+    }
+    const editProfileDataResponse = await fetch(
+      `${process.env.BACKEND_URL}/user/edit`,
+      {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
+    if (!editProfileDataResponse.ok) {
+      return json({ error: await editProfileDataResponse.text() });
+    }
+    return redirect(`/profile/${data.username}/posts`);
+  } catch (err) {
+    console.log(err);
+    return json({ error: "Error occured editing data!" });
   }
 };

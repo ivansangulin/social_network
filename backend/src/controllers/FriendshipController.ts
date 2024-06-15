@@ -40,7 +40,7 @@ friendshipRouter.get(
         return res.status(404).send("User doesn't exist!");
       }
       const friends = await areFriends(myId, userData.id);
-      if (friends || !userData.locked_profile) {
+      if (friends || userData.public_profile) {
         const friends = await getFriends(userData.id, cursor, search);
         return res.status(200).json(friends);
       }

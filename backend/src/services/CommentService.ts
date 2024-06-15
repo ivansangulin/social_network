@@ -140,7 +140,7 @@ export const canInteractWithComment = async (
     },
   });
   if (
-    !postCreator.locked_profile ||
+    postCreator.public_profile ||
     (await areFriends(userId, postCreator.id)) ||
     postCreator.id === userId
   ) {

@@ -2,7 +2,10 @@ import { Request, Response, Router } from "express";
 import z from "zod";
 import {
   changeProfilePicture,
+  checkIfEmailExists,
+  checkIfUsernameExists,
   deleteProfilePicture,
+  editProfileData,
   findMyself,
   findUserByUsernameOrEmail,
   findUserDataFromUsername,
@@ -153,7 +156,7 @@ userRouter.get(
         user: {
           id: userData.id,
           username: username,
-          lockedProfile: userData.locked_profile,
+          public_profile: userData.public_profile,
           profilePictureUuid: userData.profile_picture_uuid,
         },
         friendRequestSenderId: friendRequest
@@ -237,6 +240,35 @@ userRouter.delete(
     } catch (err) {
       console.log(err);
       return res.status(500).send("Error occured deleting profile picture");
+    }
+  }
+);
+
+userRouter.post(
+  "/edit",
+  RequiresAuth,
+  check("username").exists({ values: "falsy" }).isString().trim().notEmpty(),
+  check("email").exists({ values: "falsy" }).isString().trim().notEmpty(),
+  check("public_profile").exists({ values: "null" }).isBoolean(),
+  Validate,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.userId as string;
+      const username = req.body.username as string;
+      const email = req.body.email as string;
+      const public_profile = req.body.public_profile as boolean;
+      const me = await findMyself(userId);
+      if (me.username !== username && (await checkIfUsernameExists(username))) {
+        return res.status(400).send("Username already exists");
+      }
+      if (me.email !== email && (await checkIfEmailExists(email))) {
+        return res.status(400).send("Email already exists");
+      }
+      await editProfileData(userId, username, email, public_profile);
+      return res.sendStatus(200);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Couldn't edit profile data!");
     }
   }
 );

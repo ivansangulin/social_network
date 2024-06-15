@@ -13,7 +13,7 @@ model User {
   email                String             @unique
   password             String
   profile_picture_uuid String?
-  locked_profile       Boolean
+  public_profile       Boolean
   friendshipToFriend   Friendship[]       @relation("friendRelation")
   friendshipToUser     Friendship[]       @relation("userRelation")
   posts                Post[]

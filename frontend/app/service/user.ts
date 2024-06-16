@@ -38,11 +38,19 @@ export const editProfileDataSchema = zfd.formData({
   public_profile: zfd.checkbox(),
 });
 
+export const changePasswordDataSchema = zfd.formData({
+  username: zfd.text(),
+  currentPassword: zfd.text(),
+  newPassword: zfd.text(),
+  repeatedPassword: zfd.text(),
+});
+
 export type MyData = z.infer<typeof myDataSchema>;
 export type UserData = z.infer<typeof userDataSchema>;
 type EditProfileData = z.infer<typeof editProfileDataSchema>;
 export type SearchUser = z.infer<typeof searchUserSchema>;
 export type SearchUsersPaging = z.infer<typeof searchUsersPagingSchema>;
+type ChangePasswordData = z.infer<typeof changePasswordDataSchema>;
 
 export const me = async (request: Request) => {
   const cookie = getCookie(request);
@@ -233,5 +241,35 @@ export const searchUsers = async (
   } catch (err) {
     console.log(err);
     return [];
+  }
+};
+
+export const changePassword = async (
+  request: Request,
+  data: ChangePasswordData
+) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return json({ error: "Error occured while changing password!" });
+    }
+    const changePasswordResponse = await fetch(
+      `${process.env.BACKEND_URL}/user/change-password`,
+      {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
+    if (!changePasswordResponse.ok) {
+      return json({ error: await changePasswordResponse.text() });
+    }
+    return redirect(`/profile/${data.username}/posts`);
+  } catch (err) {
+    console.log(err);
+    return json({ error: "Error occured while changing password!" });
   }
 };

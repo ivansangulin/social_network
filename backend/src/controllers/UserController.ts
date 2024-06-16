@@ -1,9 +1,11 @@
 import { Request, Response, Router } from "express";
 import z from "zod";
 import {
+  changePassword,
   changeProfilePicture,
   checkIfEmailExists,
   checkIfUsernameExists,
+  checkMyPassword,
   deleteProfilePicture,
   editProfileData,
   findMyself,
@@ -276,10 +278,10 @@ userRouter.post(
 
 userRouter.get(
   "/search",
+  RequiresAuth,
   check("cursor").isString().trim().notEmpty().optional(),
   check("search").exists({ values: "falsy" }).isString().trim().notEmpty(),
   Validate,
-  RequiresAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = req.userId as string;
@@ -290,6 +292,49 @@ userRouter.get(
     } catch (err) {
       console.log(err);
       return res.status(500).send("Couldn't fetch users");
+    }
+  }
+);
+
+userRouter.post(
+  "/change-password",
+  RequiresAuth,
+  check("currentPassword")
+    .exists({ values: "falsy" })
+    .isString()
+    .trim()
+    .notEmpty(),
+  check("newPassword").exists({ values: "falsy" }).isString().trim().notEmpty(),
+  check("repeatedPassword")
+    .exists({ values: "falsy" })
+    .isString()
+    .trim()
+    .notEmpty(),
+  Validate,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.userId as string;
+      const currentPassword = req.body.currentPassword as string;
+      const newPassword = req.body.newPassword as string;
+      const repeatedPassword = req.body.repeatedPassword as string;
+      if (newPassword !== repeatedPassword) {
+        return res
+          .status(400)
+          .send("New password and repeated password must be the same!");
+      }
+      if (currentPassword === newPassword) {
+        return res
+          .status(400)
+          .send("New password can't be the same as the old one!");
+      }
+      if (!(await checkMyPassword(userId, currentPassword))) {
+        return res.status(400).send("Wrong password!");
+      }
+      await changePassword(userId, newPassword);
+      return res.sendStatus(200);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Couldn't change password!");
     }
   }
 );

@@ -6,13 +6,12 @@ const saltRounds = 5;
 
 export const registerUser = async (userDto: UserRegistrationType) => {
   const hashedPassword: string = bcrypt.hashSync(userDto.password, saltRounds);
-  userDto.password = hashedPassword;
   const user = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
         username: userDto.username,
         email: userDto.email,
-        password: userDto.password,
+        password: hashedPassword,
         public_profile: false,
       },
     });
@@ -204,4 +203,28 @@ export const searchUsers = async (
     users,
     cursor: users.length > 0 ? users[users.length - 1].username : "",
   };
+};
+
+export const changePassword = async (userId: string, newPassword: string) => {
+  const hashedPassword: string = bcrypt.hashSync(newPassword, saltRounds);
+  await prisma.user.update({
+    data: {
+      password: hashedPassword,
+    },
+    where: {
+      id: userId,
+    },
+  });
+};
+
+export const checkMyPassword = async (userId: string, password: string) => {
+  const { password: dbPassword } = await prisma.user.findUniqueOrThrow({
+    select: {
+      password: true,
+    },
+    where: {
+      id: userId,
+    },
+  });
+  return bcrypt.compareSync(password, dbPassword);
 };

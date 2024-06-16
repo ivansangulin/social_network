@@ -22,9 +22,25 @@ export const MyProfile = () => {
   return (
     <div className="flex flex-col items-center">
       <div className="flex flex-col bg-white w-full h-fit items-center space-y-4 pt-8">
-        <UploadProfilePictureDialog />
-        <div className="text-2xl text-center w-[250px] shadow-2xl drop-shadow-2xl rounded-md border border-slate-100 p-1">
-          {username}
+        <div className="w-4/12 flex items-center space-x-4">
+          <UploadProfilePictureDialog />
+          <div className="flex flex-col space-y-4 items-start">
+            <div className="text-2xl text-center p-1">{username}</div>
+            <div className="flex space-x-2">
+              <Link
+                to="/profile/edit"
+                className="bg-primary text-white py-1 px-4 rounded-2xl hover:bg-primary-dark"
+              >
+                Edit profile
+              </Link>
+              <Link
+                to="/profile/change-password"
+                className="bg-primary text-white py-1 px-4 rounded-2xl hover:bg-primary-dark"
+              >
+                Change password
+              </Link>
+            </div>
+          </div>
         </div>
         <div className="flex w-4/12 text-center border-b-2 border-primary text-2xl">
           <Link
@@ -157,6 +173,8 @@ export const UserProfile = ({ userData }: { userData: UserData }) => {
             setAreFriends(false);
           }
           setPendingRequest(true);
+        } else {
+          window.location.reload();
         }
       })
       .catch(() => {

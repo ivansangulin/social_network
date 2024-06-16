@@ -61,7 +61,6 @@ export const addFriend = async (request: Request, friendId: string) => {
       }
     );
     if (!addFriendResponse.ok) {
-      console.log(addFriendResponse);
       return false;
     }
     return true;
@@ -120,7 +119,6 @@ export const handleFriendRequest = async (
       }
     );
     if (!handleFriendRequestResponse.ok) {
-      console.log(handleFriendRequestResponse);
       return false;
     }
     return true;

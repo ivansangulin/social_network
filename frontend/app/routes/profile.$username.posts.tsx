@@ -81,9 +81,7 @@ export default () => {
           </SetPostsContext.Provider>
         ) : (
           <div className="text-4xl text-center">
-            {myProfile
-              ? "You don't have any posts yet..."
-              : "This user doesn't have any posts..."}
+            {myProfile && "You don't have any posts yet..."}
           </div>
         )
       ) : (

@@ -1,17 +1,15 @@
-import { Field, Label, Switch } from "@headlessui/react";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { Form, useActionData, useNavigation } from "@remix-run/react";
 import { useState } from "react";
 import { AnimatedDots } from "~/components/animated-dots";
-import { UploadProfilePictureDialog } from "~/components/profile";
 import { useUserData } from "~/hooks/useUserData";
-import { editProfileData, editProfileDataSchema } from "~/service/user";
+import { changePassword, changePasswordDataSchema } from "~/service/user";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
-  const data = editProfileDataSchema.safeParse(formData);
+  const data = changePasswordDataSchema.safeParse(formData);
   if (data.success) {
-    return await editProfileData(request, data.data);
+    return await changePassword(request, data.data);
   } else {
     return json({ error: "Data can't be empty!" });
   }
@@ -21,10 +19,9 @@ export default () => {
   const actionData = useActionData<typeof action>();
   const user = useUserData()!;
   const navigation = useNavigation();
-  const [username, setUsername] = useState<string>(user.username);
-  const [email, setEmail] = useState<string>(user.email);
-  const [checked, setChecked] = useState<boolean>(user.public_profile);
-  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [repeatedPassword, setRepeatedPassword] = useState<string>("");
+  const passwordsEqual = newPassword === repeatedPassword;
   const inputStyle =
     "rounded-lg min-h-12 px-4 border border-slate-300 w-full peer outline outline-1 outline-stone-200 border-none focus:outline-blue-500 transition-all duration-200";
   const labelStyle =
@@ -32,73 +29,61 @@ export default () => {
 
   return (
     <div className="grow flex flex-col justify-start items-center space-y-2">
-      <div className="text-4xl text-center mb-8 mt-20">Edit profile data</div>
-
-      <div className="w-2/12 min-w-96 bg-white rounded-lg flex justify-between items-center space-x-8 p-4">
-        <div className="max-w-[100px]">
-          <UploadProfilePictureDialog
-            open={dialogOpen}
-            onOpenChange={setDialogOpen}
-          />
-        </div>
-        <button
-          className="bg-primary rounded-lg text-white py-2 px-4 h-fit hover:bg-primary-dark"
-          onClick={() => setDialogOpen(!dialogOpen)}
-        >
-          Change photo
-        </button>
-      </div>
+      <div className="text-4xl text-center mb-8 mt-20">Change password</div>
       <Form
         method="POST"
         className="w-2/12 min-w-96 flex flex-col space-y-2 rounded-xl relative"
       >
+        <input type="hidden" name="username" defaultValue={user.username} />
+
         <div className="relative w-full !mt-8">
           <input
             className={inputStyle}
-            type="text"
-            name="username"
-            value={username}
+            type="password"
+            name="currentPassword"
             placeholder=""
-            onChange={(e) => setUsername(e.currentTarget.value)}
             required
           />
-          <label htmlFor="username" className={labelStyle}>
-            Username
+          <label htmlFor="currentPassword" className={labelStyle}>
+            Current password
           </label>
         </div>
 
         <div className="relative w-full !mt-8">
           <input
             className={inputStyle}
-            type="email"
-            name="email"
-            value={email}
+            type="password"
+            name="newPassword"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.currentTarget.value)}
             placeholder=""
-            onChange={(e) => setEmail(e.currentTarget.value)}
             required
           />
-          <label htmlFor="email" className={labelStyle}>
-            E-mail
+          <label htmlFor="newPassword" className={labelStyle}>
+            New password
           </label>
         </div>
 
-        <Field className="pt-2 flex space-x-4 items-end">
-          <Label className="text-xl">Public profile:</Label>
-          <Switch
-            checked={checked}
-            onChange={setChecked}
-            className="group inline-flex h-6 w-11 items-center rounded-full bg-red-500 transition data-[checked]:bg-primary"
-          >
-            <span className="size-4 translate-x-1 rounded-full bg-gray-200 transition group-data-[checked]:translate-x-6" />
-          </Switch>
+        <div className="relative w-full !mt-8">
           <input
-            name="public_profile"
-            type="checkbox"
-            className="hidden"
-            checked={checked}
-            onChange={(e) => setChecked(e.currentTarget.checked)}
+            className={inputStyle}
+            type="password"
+            name="repeatedPassword"
+            value={repeatedPassword}
+            onChange={(e) => setRepeatedPassword(e.currentTarget.value)}
+            placeholder=""
+            required
           />
-        </Field>
+          <label htmlFor="repeatedPassword" className={labelStyle}>
+            Repeated new password
+          </label>
+        </div>
+
+        <div
+          className={`text-red-500 invisible ${!passwordsEqual && "!visible"}`}
+        >
+          Passwords are not equal!
+        </div>
 
         <button
           type="submit"

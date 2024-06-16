@@ -10,6 +10,7 @@ import {
   findUserByUsernameOrEmail,
   findUserDataFromUsername,
   registerUser,
+  searchUsers,
 } from "../services/UserService";
 import { check, oneOf } from "express-validator";
 import {
@@ -269,6 +270,26 @@ userRouter.post(
     } catch (err) {
       console.log(err);
       return res.status(500).send("Couldn't edit profile data!");
+    }
+  }
+);
+
+userRouter.get(
+  "/search",
+  check("cursor").isString().trim().notEmpty().optional(),
+  check("search").exists({ values: "falsy" }).isString().trim().notEmpty(),
+  Validate,
+  RequiresAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = req.userId as string;
+      const cursor = req.query.cursor as string | undefined;
+      const search = req.query.search as string;
+      const usersPaging = await searchUsers(userId, cursor, search);
+      return res.status(200).json(usersPaging);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Couldn't fetch users");
     }
   }
 );

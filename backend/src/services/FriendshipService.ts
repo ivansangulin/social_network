@@ -18,7 +18,7 @@ export const getFriends = async (
                   {
                     friend: {
                       username: {
-                        contains: `%${search.toLowerCase()}%`,
+                        contains: `${search.toLowerCase()}`,
                         mode: "insensitive",
                       },
                     },
@@ -29,7 +29,7 @@ export const getFriends = async (
                   {
                     user: {
                       username: {
-                        contains: `%${search.toLowerCase()}%`,
+                        contains: `${search.toLowerCase()}`,
                         mode: "insensitive",
                       },
                     },

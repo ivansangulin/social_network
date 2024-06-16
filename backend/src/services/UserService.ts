@@ -165,3 +165,43 @@ export const editProfileData = async (
     },
   });
 };
+
+export const searchUsers = async (
+  userId: string,
+  cursor: string | undefined,
+  search: string
+) => {
+  const [count, users] = await Promise.all([
+    prisma.user.count({
+      where: {
+        username: {
+          contains: `${search.toLowerCase()}`,
+          mode: "insensitive",
+        },
+      },
+    }),
+    prisma.user.findMany({
+      take: 30,
+      skip: !!cursor ? 1 : 0,
+      cursor: cursor ? { username: cursor } : undefined,
+      select: {
+        username: true,
+        profile_picture_uuid: true,
+      },
+      where: {
+        username: {
+          contains: `${search.toLowerCase()}`,
+          mode: "insensitive",
+        },
+        NOT: { id: userId },
+      },
+      orderBy: { username: "asc" },
+    }),
+  ]);
+
+  return {
+    count,
+    users,
+    cursor: users.length > 0 ? users[users.length - 1].username : "",
+  };
+};

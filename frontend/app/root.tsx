@@ -43,7 +43,6 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   formMethod,
   actionResult,
 }) => {
-  console.log(formAction)
   if (
     currentUrl.pathname.includes("/login") ||
     currentUrl.pathname.includes("/register") ||

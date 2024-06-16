@@ -3,7 +3,7 @@ import { Form, useFetcher, useLoaderData } from "@remix-run/react";
 import { useState, useEffect, useRef, useContext, FormEvent } from "react";
 import { Post } from "~/components/post";
 import { SetPostsContext, SocketContext } from "~/root";
-import { Friend, getMyFriends } from "~/service/friendship";
+import { getMyFriends } from "~/service/friendship";
 import { getMainPagePosts, PostPaging, Post as PostType } from "~/service/post";
 import { me } from "~/service/user";
 
@@ -22,12 +22,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     postsPaging,
     backendUrl: process.env.BACKEND_URL,
   });
-};
-
-export type ChatData = {
-  defaultOpen: boolean;
-  notification: boolean;
-  friend: Friend;
 };
 
 export default function Index() {

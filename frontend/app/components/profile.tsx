@@ -269,7 +269,13 @@ export const UserProfile = ({ userData }: { userData: UserData }) => {
   );
 };
 
-export const UploadProfilePictureDialog = ({ open }: { open?: boolean }) => {
+export const UploadProfilePictureDialog = ({
+  open,
+  onOpenChange,
+}: {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) => {
   const user = useUserData()!;
   const backendUrl = useServerUrl()!;
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -282,6 +288,12 @@ export const UploadProfilePictureDialog = ({ open }: { open?: boolean }) => {
       setIsOpen(open);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (onOpenChange) {
+      onOpenChange(isOpen);
+    }
+  }, [isOpen, onOpenChange]);
 
   const deletePhoto = () => {
     setError(null);

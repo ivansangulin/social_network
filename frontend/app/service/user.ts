@@ -21,6 +21,17 @@ const userDataSchema = z.object({
   friendRequestSenderId: z.string().nullish(),
 });
 
+const searchUserSchema = z.object({
+  username: z.string(),
+  profile_picture_uuid: z.string().nullish(),
+});
+
+const searchUsersPagingSchema = z.object({
+  count: z.number(),
+  users: z.array(searchUserSchema),
+  cursor: z.string(),
+});
+
 export const editProfileDataSchema = zfd.formData({
   username: zfd.text(),
   email: zfd.text(),
@@ -30,6 +41,8 @@ export const editProfileDataSchema = zfd.formData({
 export type MyData = z.infer<typeof myDataSchema>;
 export type UserData = z.infer<typeof userDataSchema>;
 type EditProfileData = z.infer<typeof editProfileDataSchema>;
+export type SearchUser = z.infer<typeof searchUserSchema>;
+export type SearchUsersPaging = z.infer<typeof searchUsersPagingSchema>;
 
 export const me = async (request: Request) => {
   const cookie = getCookie(request);
@@ -186,5 +199,39 @@ export const editProfileData = async (
   } catch (err) {
     console.log(err);
     return json({ error: "Error occured editing data!" });
+  }
+};
+
+export const searchUsers = async (
+  request: Request,
+  search: string,
+  cursor: string | null
+) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return [];
+    }
+    const searchUsersResponse = await fetch(
+      `${process.env.BACKEND_URL}/user/search?search=${search}${
+        cursor ? `&cursor=${cursor}` : ""
+      }`,
+      {
+        method: "GET",
+        headers: {
+          Cookie: cookie,
+        },
+      }
+    );
+    if (!searchUsersResponse.ok) {
+      return [];
+    }
+    const searchUsersPaging = searchUsersPagingSchema.parse(
+      await searchUsersResponse.json()
+    );
+    return searchUsersPaging;
+  } catch (err) {
+    console.log(err);
+    return [];
   }
 };

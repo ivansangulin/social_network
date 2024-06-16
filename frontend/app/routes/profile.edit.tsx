@@ -36,7 +36,10 @@ export default () => {
 
       <div className="w-2/12 min-w-96 bg-white rounded-lg flex justify-between items-center space-x-8 p-4">
         <div className="max-w-[100px]">
-          <UploadProfilePictureDialog open={dialogOpen} />
+          <UploadProfilePictureDialog
+            open={dialogOpen}
+            onOpenChange={setDialogOpen}
+          />
         </div>
         <button
           className="bg-primary rounded-lg text-white py-2 px-4 h-fit"

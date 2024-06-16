@@ -44,7 +44,7 @@ export default () => {
       {myData ? (
         <MyProfile />
       ) : userData ? (
-        <UserProfile userData={userData} />
+        <UserProfile userData={userData} key={userData.user.username} />
       ) : (
         <div className="grow flex flex-col justify-center items-center space-y-4">
           <div className="text-bold text-6xl">{error?.status}</div>

@@ -165,17 +165,17 @@ export default () => {
     const diffFromNow = differenceInCalendarDays(new Date(), date);
     const formatedDate =
       diffFromNow > 7
-        ? format(date.toLocaleDateString(), "dd-MM-yyyy")
+        ? format(date, "dd-MM-yyyy")
         : diffFromNow === 0
         ? "Today"
         : diffFromNow === 1
         ? "Yesterday"
-        : format(date.toLocaleDateString(), "EEEE");
+        : format(date, "EEEE");
     return formatedDate;
   };
 
   return (
-    <div className="pl-[22rem] flex h-svh">
+    <div className="pl-[18rem] 3xl:pl-[22rem] flex h-svh">
       <div className="flex flex-col px-4 py-2 bg-white w-[28rem] border-l border-secondary shrink-0">
         <div className="flex justify-between items-center py-2">
           <div className="text-xl font-semibold">Inbox</div>
@@ -208,7 +208,7 @@ export default () => {
                     <div className="text-lg font-semibold text-left">
                       {chat.user.username}
                     </div>
-                    {chat.message?.created && (
+                    {!!chat.message?.created && (
                       <div className="text-sm">
                         {calculateMessageDateDescriptive(
                           new Date(chat.message.created)
@@ -378,6 +378,8 @@ const FriendsFinder = ({
   const count = useRef<number>(0);
   const newSearch = useRef<boolean>(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounce = 500;
+
   useEffect(() => {
     const data = fetcher.data as FriendsPagingType | null;
     if (data) {
@@ -397,7 +399,6 @@ const FriendsFinder = ({
   }, [fetcher.data]);
 
   const handleSearch = (e: FormEvent<HTMLInputElement>) => {
-    const debounce = 500;
     search.current = e.currentTarget.value;
     newSearch.current = true;
     clearTimeout(timeoutRef.current);

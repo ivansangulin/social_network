@@ -64,7 +64,7 @@ postRouter.get(
 
 postRouter.post(
   "/like",
-  check("liked").exists({ values: "falsy" }).isBoolean().notEmpty(),
+  check("liked").exists({ values: "null" }).isBoolean().notEmpty(),
   check("postId").exists({ values: "falsy" }).isString().trim().notEmpty(),
   Validate,
   async (req, res) => {

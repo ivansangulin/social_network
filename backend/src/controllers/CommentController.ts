@@ -48,7 +48,7 @@ commentRouter.post(
 commentRouter.post(
   "/like",
   check("commentId").exists({ values: "falsy" }).isString().trim().notEmpty(),
-  check("liked").exists({ values: "falsy" }).isBoolean().notEmpty(),
+  check("liked").exists({ values: "null" }).isBoolean().notEmpty(),
   Validate,
   async (req: Request, res: Response) => {
     const userId = req.userId as string;

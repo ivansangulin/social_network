@@ -188,10 +188,10 @@ export const UserProfile = ({ userData }: { userData: UserData }) => {
   return (
     <div className="flex flex-col items-center">
       <div className="flex flex-col bg-white w-full h-fit items-center space-y-4 pt-8">
-        <div className="w-4/12 flex items-center justify-between !mb-4">
+        <div className="w-4/12 flex items-center justify-between">
           <div className="flex space-x-4 items-center">
             {userData.user.profilePictureUuid ? (
-              <div className="rounded-full overflow-hidden aspect-square max-w-[120px]">
+              <div className="rounded-full overflow-hidden aspect-square max-w-[150px]">
                 <img
                   alt=""
                   src={`${backendUrl}/image/profile_picture/${userData.user.profilePictureUuid}`}
@@ -199,7 +199,7 @@ export const UserProfile = ({ userData }: { userData: UserData }) => {
                 />
               </div>
             ) : (
-              <div className="overflow-hidden max-w-[120px]">
+              <div className="overflow-hidden max-w-[150px]">
                 <img alt="" src="/images/default_profile_picture.png" />
               </div>
             )}

@@ -7,7 +7,7 @@ import {
   XMarkIcon,
   ShareIcon,
 } from "./icons";
-import {
+import React, {
   FormEvent,
   useRef,
   useState,
@@ -54,6 +54,7 @@ export const Post = ({ post }: { post: PostType }) => {
     post.parentCommentCount ? comments.length < post.parentCommentCount : false
   );
   const commentsContainerRef = useRef<HTMLDivElement>(null);
+  const singleComment = useRef<boolean>(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -85,6 +86,7 @@ export const Post = ({ post }: { post: PostType }) => {
   useEffect(() => {
     const data = fetcher.data as CommentsPaging | null;
     if (data && post.parentCommentCount) {
+      singleComment.current = false;
       cursor.current = data.cursor;
       hasMore.current =
         comments.length + data.comments.length < post.parentCommentCount;
@@ -94,6 +96,21 @@ export const Post = ({ post }: { post: PostType }) => {
     }
     fetching.current = false;
   }, [fetcher.data]);
+
+  const canUseDOM = !!(
+    typeof window !== "undefined" &&
+    window.document &&
+    window.document.createElement
+  );
+
+  const useLayoutEffect = canUseDOM ? React.useLayoutEffect : () => {};
+
+  useLayoutEffect(() => {
+    if (commentsContainerRef.current && singleComment.current) {
+      commentsContainerRef.current.scrollTop =
+        commentsContainerRef.current.scrollHeight;
+    }
+  }, [comments]);
 
   const onLike = (e: FormEvent<HTMLButtonElement>) => {
     !liked
@@ -178,6 +195,7 @@ export const Post = ({ post }: { post: PostType }) => {
       parent_id: parentComment?.id,
     };
     if (!parentComment) {
+      singleComment.current = true;
       setComments((prevComments) => {
         return [...prevComments, newComment];
       });

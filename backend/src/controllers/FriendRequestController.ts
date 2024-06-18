@@ -59,7 +59,7 @@ friendRequestRouter.post(
 friendRequestRouter.post(
   "/handle",
   check("friendId").exists({ values: "falsy" }).isString().trim().notEmpty(),
-  check("accepted").exists({ values: "falsy" }).isBoolean().notEmpty(),
+  check("accepted").exists({ values: "null" }).isBoolean().notEmpty(),
   Validate,
   async (req, res) => {
     const userId = req.userId as string;

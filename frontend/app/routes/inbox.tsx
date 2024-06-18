@@ -5,7 +5,7 @@ import {
   LoaderFunctionArgs,
   redirect,
 } from "@remix-run/node";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { differenceInCalendarDays, format } from "date-fns";
 import {
   FormEvent,
@@ -751,7 +751,7 @@ const ActiveChat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex w-full border-b border-secondary p-4 bg-white">
-        <div className="flex items-center space-x-2">
+        <Link to={`/profile/${props.chat.user.username}/posts`} className="flex items-center space-x-2">
           {props.chat.user.profile_picture_uuid && backendUrl ? (
             <img
               alt=""
@@ -766,7 +766,7 @@ const ActiveChat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
             />
           )}
           <div className="">{props.chat.user.username}</div>
-        </div>
+        </Link>
       </div>
       <div
         className="grow flex flex-col-reverse space-y-2 px-8 py-2 overflow-y-auto scrollbar-thin w-full"

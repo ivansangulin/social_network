@@ -12,7 +12,7 @@ const messagingRouter = Router();
 messagingRouter.get(
   "/messages",
   check("chatId").exists({ values: "falsy" }).isString().trim().notEmpty(),
-  check("cursor").optional().isString(),
+  check("cursor").optional().trim().isString(),
   Validate,
   async (req: Request, res: Response) => {
     const userId = req.userId as string;
@@ -30,7 +30,7 @@ messagingRouter.get(
 
 messagingRouter.get(
   "/chats",
-  check("cursor").optional().isString(),
+  check("cursor").optional().trim().isString(),
   Validate,
   async (req: Request, res: Response) => {
     const userId = req.userId as string;

@@ -6,6 +6,8 @@ import {
   PaperAirplaneIcon,
   XMarkIcon,
   ShareIcon,
+  ElipsisHorizontal,
+  TrashIcon,
 } from "./icons";
 import React, {
   FormEvent,
@@ -23,6 +25,14 @@ import { AnimatedDots } from "./animated-dots";
 import { SetPostsContext } from "~/root";
 import { CommentsPaging, RepliesPaging } from "~/service/comment";
 
+const canUseDOM = !!(
+  typeof window !== "undefined" &&
+  window.document &&
+  window.document.createElement
+);
+
+const useLayoutEffect = canUseDOM ? React.useLayoutEffect : () => {};
+
 export const Post = ({ post }: { post: PostType }) => {
   const [liked, setLiked] = useState<boolean>(post.liked);
   const [likeCount, setLikeCount] = useState<number>(post._count.likes);
@@ -30,6 +40,7 @@ export const Post = ({ post }: { post: PostType }) => {
   const [commentCount, setCommentCount] = useState<number>(
     post._count.comments
   );
+  const [postText, setPostText] = useState<string>(post.text);
   const backendUrl = useServerUrl();
   const user = useUserData()!;
   const location = useLocation();
@@ -39,9 +50,9 @@ export const Post = ({ post }: { post: PostType }) => {
   const defaultPictureHeight = 42;
   const maxHeight = 42 * 5;
 
-  const [text, setText] = useState<string>("");
+  const [commentText, setCommentText] = useState<string>("");
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const commentingDisabled = text.trim() === "";
+  const commentingDisabled = commentText.trim() === "";
 
   const [reply, setReply] = useState<CommentType | null | undefined>();
 
@@ -97,14 +108,6 @@ export const Post = ({ post }: { post: PostType }) => {
     fetching.current = false;
   }, [fetcher.data]);
 
-  const canUseDOM = !!(
-    typeof window !== "undefined" &&
-    window.document &&
-    window.document.createElement
-  );
-
-  const useLayoutEffect = canUseDOM ? React.useLayoutEffect : () => {};
-
   useLayoutEffect(() => {
     if (commentsContainerRef.current && singleComment.current) {
       commentsContainerRef.current.scrollTop =
@@ -154,7 +157,7 @@ export const Post = ({ post }: { post: PostType }) => {
   };
 
   const handleTextChange = (e: FormEvent<HTMLTextAreaElement>) => {
-    setText(e.currentTarget.value);
+    setCommentText(e.currentTarget.value);
     if (textAreaRef.current) {
       textAreaRef.current.style.height = `auto`;
       textAreaRef.current.style.height = `${Math.min(
@@ -172,13 +175,13 @@ export const Post = ({ post }: { post: PostType }) => {
   };
 
   const comment = () => {
-    const comment = text;
+    const comment = commentText;
     const tempId = new Date().toISOString();
     const parentComment = reply?.parent_id
       ? comments.find((c) => c.id === reply.parent_id)
       : reply;
     const parentIndex = comments.findIndex((c) => c.id === parentComment?.id);
-    setText("");
+    setCommentText("");
     setCommentCount((c) => {
       return c + 1;
     });
@@ -244,7 +247,7 @@ export const Post = ({ post }: { post: PostType }) => {
             });
           }
           setReply(parentComment);
-          setText(comment);
+          setCommentText(comment);
           setCommentCount((c) => {
             return c - 1;
           });
@@ -289,14 +292,14 @@ export const Post = ({ post }: { post: PostType }) => {
           });
         }
         setReply(parentComment);
-        setText(comment);
+        setCommentText(comment);
         setCommentCount((c) => {
           return c - 1;
         });
       });
   };
   return (
-    <div className="flex flex-col space-y-4 p-4 border border-slate-300 rounded-lg bg-white">
+    <div className="flex flex-col space-y-4 p-4 border border-slate-300 rounded-lg bg-white relative">
       <div className="flex flex-col space-y-0.5">
         <div className="flex items-center space-x-2">
           {post.user.profile_picture_uuid && backendUrl ? (
@@ -312,54 +315,71 @@ export const Post = ({ post }: { post: PostType }) => {
               <img alt="" src="/images/default_profile_picture.png" />
             </div>
           )}
-          <div className="flex flex-col">
-            <div className="flex space-x-2 items-baseline">
-              <Link
-                className="text-lg font-semibold hover:underline"
-                to={`/profile/${post.user.username}/posts`}
-              >
-                {post.user.username}
-              </Link>
-              {!!post.parent && (
-                <span className="text-sm text-neutral-600">shared a post</span>
+          <div className="w-full flex flex-col">
+            <div className="flex justify-between items-center">
+              <div className="flex space-x-2 items-baseline">
+                <Link
+                  className="text-lg font-semibold hover:underline"
+                  to={`/profile/${post.user.username}/posts`}
+                >
+                  {post.user.username}
+                </Link>
+                {!!post.parent_id && (
+                  <span className="text-sm text-neutral-600">
+                    shared a post
+                  </span>
+                )}
+              </div>
+              {post.user.username === user.username && (
+                <PostOptions
+                  postId={post.id}
+                  postText={post.text}
+                  setNewText={(text) => setPostText(text)}
+                />
               )}
             </div>
             <div className="text-sm">{post.createdLocalDate}</div>
           </div>
         </div>
       </div>
-      <div>{post.text}</div>
-      {post.parent && (
-        <div className="flex flex-col space-y-4 p-4 border border-slate-300 rounded-lg">
-          <div className="flex flex-col space-y-0.5">
-            <div className="flex items-center space-x-2">
-              {post.parent.user.profile_picture_uuid && backendUrl ? (
-                <div className="rounded-full overflow-hidden aspect-square max-w-[50px]">
-                  <img
-                    alt=""
-                    src={`${backendUrl}/image/profile_picture/${post.parent.user.profile_picture_uuid}`}
-                    className="object-cover min-h-full"
-                  />
+      <div>{postText}</div>
+      {post.parent_id &&
+        (post.parent ? (
+          <div className="flex flex-col space-y-4 p-4 border border-slate-300 rounded-lg">
+            <div className="flex flex-col space-y-0.5">
+              <div className="flex items-center space-x-2">
+                {post.parent.user.profile_picture_uuid && backendUrl ? (
+                  <div className="rounded-full overflow-hidden aspect-square max-w-[50px]">
+                    <img
+                      alt=""
+                      src={`${backendUrl}/image/profile_picture/${post.parent.user.profile_picture_uuid}`}
+                      className="object-cover min-h-full"
+                    />
+                  </div>
+                ) : (
+                  <div className="overflow-hidden max-w-[50px]">
+                    <img alt="" src="/images/default_profile_picture.png" />
+                  </div>
+                )}
+                <div className="flex flex-col">
+                  <Link
+                    className="text-lg font-semibold hover:underline"
+                    to={`/profile/${post.parent.user.username}/posts`}
+                  >
+                    {post.parent.user.username}
+                  </Link>
+                  <div className="text-sm">{post.parent.createdLocalDate}</div>
                 </div>
-              ) : (
-                <div className="overflow-hidden max-w-[50px]">
-                  <img alt="" src="/images/default_profile_picture.png" />
-                </div>
-              )}
-              <div className="flex flex-col">
-                <Link
-                  className="text-lg font-semibold hover:underline"
-                  to={`/profile/${post.parent.user.username}/posts`}
-                >
-                  {post.parent.user.username}
-                </Link>
-                <div className="text-sm">{post.parent.createdLocalDate}</div>
               </div>
             </div>
+            <div>{post.parent.text}</div>
           </div>
-          <div>{post.parent.text}</div>
-        </div>
-      )}
+        ) : (
+          <div className="flex space-x-4 items-center bg-stone-100 p-4 rounded-2xl">
+            <TrashIcon className="h-8 w-8 stroke-stone-500" />
+            <div className="">This post has been deleted!</div>
+          </div>
+        ))}
       <div className="flex justify-between">
         <div className="flex space-x-2 items-end">
           <HeartIcon className="w-5 h-5 fill-primary stroke-primary" />
@@ -452,7 +472,7 @@ export const Post = ({ post }: { post: PostType }) => {
                 className={`w-full outline-none resize-none scrollbar-hidden text-base bg-secondary h-[${defaultPictureHeight}px]`}
                 onChange={handleTextChange}
                 onKeyDown={onKeyDown}
-                value={text}
+                value={commentText}
                 autoComplete="off"
               />
               <button
@@ -713,6 +733,184 @@ const ShareDialog = ({ postId }: { postId: string }) => {
                 )}
               </button>
             </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+    </>
+  );
+};
+
+const PostOptions = ({
+  postId,
+  postText,
+  setNewText,
+}: {
+  postId: string;
+  postText: string;
+  setNewText: (text: string) => void;
+}) => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [editPanelOpen, setEditPanelOpen] = useState<boolean>(false);
+  const [text, setText] = useState<string>(postText);
+  const setPosts = useContext(SetPostsContext);
+  const defaultRows = 4;
+
+  useEffect(() => {
+    if(!setIsOpen) {
+      setEditPanelOpen(false);
+    }
+  }, [setIsOpen])
+
+  const handleDelete = () => {
+    setIsOpen(false);
+    setSubmitting(true);
+    fetch("/resource/post-options", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ postId }),
+    })
+      .then((res) => res.json())
+      .then((success: boolean) => {
+        if (!success) {
+          setError("Something went wrong!");
+          setIsOpen(true);
+        } else {
+          if (setPosts)
+            setPosts((prevPosts) => {
+              return [...prevPosts.filter((p) => p.id !== postId)];
+            });
+        }
+      })
+      .catch(() => {
+        setError("Something went wrong!");
+        setIsOpen(true);
+      })
+      .finally(() => {
+        setSubmitting(false);
+      });
+  };
+
+  const handleEdit = () => {
+    if (text === "") {
+      setError("Description can't be empty!");
+      return;
+    }
+    setIsOpen(false);
+    setSubmitting(true);
+    fetch("/resource/post-options", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ postId, text }),
+    })
+      .then((res) => res.json())
+      .then((success: boolean) => {
+        if (!success) {
+          setError("Something went wrong!");
+          setIsOpen(true);
+        } else {
+          setNewText(text);
+          setEditPanelOpen(false);
+        }
+      })
+      .catch(() => {
+        setError("Something went wrong!");
+        setIsOpen(true);
+      })
+      .finally(() => {
+        setSubmitting(false);
+      });
+  };
+
+  return (
+    <>
+      <button onClick={() => setIsOpen(true)}>
+        <ElipsisHorizontal className="w-6 h-6 hover:scale-110 transition duration-100" />
+      </button>
+      {submitting && (
+        <div className="flex items-center justify-center absolute top-0 left-0 w-full h-full bg-gray-100/[0.5] z-10 text-6xl">
+          <AnimatedDots />
+        </div>
+      )}
+      <Dialog
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 flex w-screen items-center justify-center p-4 bg-black/[0.5]">
+          <DialogPanel className="max-w-lg w-full border bg-white rounded-2xl relative">
+            {error && (
+              <div className="absolute text-white bg-red-500 rounded-2xl px-4 py-2 -top-16 flex space-x-4">
+                <div className="">{error}</div>
+                <button onClick={() => setError(null)}>
+                  <XMarkIcon className="stroke-white h-6 w-6" />
+                </button>
+              </div>
+            )}
+            {!editPanelOpen ? (
+              <>
+                <button
+                  className="w-full py-4 font-semibold text-red-600 hover:bg-stone-100 rounded-t-2xl"
+                  onClick={handleDelete}
+                >
+                  Remove
+                </button>
+                <hr />
+                <button
+                  className="w-full py-4 font-semibold hover:bg-stone-100"
+                  onClick={() => setEditPanelOpen(true)}
+                >
+                  Edit
+                </button>
+                <hr />
+                <button
+                  className="w-full py-4 font-semibold hover:bg-stone-100 rounded-b-2xl"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <div className="flex flex-col space-y-4 p-4">
+                <DialogTitle className="font-bold text-center flex justify-between items-center">
+                  <div className="p-1" />
+                  <div className="text-lg">Edit post</div>
+                  <button
+                    className="p-1 rounded-full hover:bg-stone-100"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <XMarkIcon className="w-6 h-6" />
+                  </button>
+                </DialogTitle>
+                <textarea
+                  rows={defaultRows}
+                  placeholder="Add a description"
+                  className="w-full outline-none resize-none scrollbar-hidden text-base rounded-2xl border py-2 px-4"
+                  onChange={(e) => setText(e.currentTarget.value)}
+                  value={text}
+                  autoComplete="off"
+                  required
+                />
+                <div className="flex">
+                  <button
+                    className={`w-full bg-primary text-white py-1 px-3 rounded-xl ${
+                      text !== ""
+                        ? "hover:bg-primary-dark"
+                        : "cursor-not-allowed"
+                    }`}
+                    onClick={handleEdit}
+                    disabled={submitting || text === ""}
+                  >
+                    Submit
+                  </button>
+                </div>
+              </div>
+            )}
           </DialogPanel>
         </div>
       </Dialog>

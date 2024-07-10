@@ -158,7 +158,7 @@ export default () => {
               <AnimatedDots />
             </div>
           ) : (
-            "Log in"
+            "Register"
           )}
         </button>
 

@@ -17,6 +17,7 @@ export const getUserPosts = async (
       cursor: cursor ? { id: cursor } : undefined,
       select: {
         id: true,
+        parent_id: true,
         createdLocalDate: true,
         text: true,
         _count: {
@@ -81,6 +82,7 @@ export const createPost = async (userId: string, text: string) => {
     },
     select: {
       id: true,
+      parent_id: true,
       createdLocalDate: true,
       text: true,
       _count: {
@@ -155,6 +157,7 @@ export const getMainPagePosts = async (
       },
       select: {
         id: true,
+        parent_id: true,
         createdLocalDate: true,
         text: true,
         _count: {
@@ -245,6 +248,7 @@ export const getPost = async (userId: string, postId: string) => {
     prisma.post.findUniqueOrThrow({
       select: {
         id: true,
+        parent_id: true,
         createdLocalDate: true,
         text: true,
         user_id: true,
@@ -403,6 +407,7 @@ export const sharePost = async (
     },
     select: {
       id: true,
+      parent_id: true,
       createdLocalDate: true,
       text: true,
       _count: {
@@ -444,4 +449,32 @@ export const sharePost = async (
   return {
     post: { liked: likes.length > 0, ...props },
   };
+};
+
+export const deletePost = async (postId: string) => {
+  await prisma.post.delete({
+    where: {
+      id: postId,
+    },
+  });
+};
+
+export const editPost = async (postId: string, text: string) => {
+  await prisma.post.update({
+    data: {
+      text: text,
+    },
+    where: {
+      id: postId,
+    },
+  });
+};
+
+export const isOwnerOfPost = async (userId: string, postId: string) => {
+  return !!(await prisma.post.findFirst({
+    where: {
+      user_id: userId,
+      id: postId,
+    },
+  }));
 };

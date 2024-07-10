@@ -8,6 +8,9 @@ import {
   canInteractWithPost,
   sharePost,
   postIsShareable,
+  deletePost,
+  isOwnerOfPost,
+  editPost,
 } from "../services/PostService";
 import { check } from "express-validator";
 import Validate from "../middleware/validate";
@@ -135,6 +138,48 @@ postRouter.post(
     } catch (err) {
       console.log(err);
       return res.status(500).send("Couldn't share post!");
+    }
+  }
+);
+
+postRouter.delete(
+  "/delete",
+  check("postId").exists({ values: "falsy" }).isString().trim().notEmpty(),
+  Validate,
+  async (req, res) => {
+    const userId = req.userId as string;
+    const postId = req.body.postId as string;
+    try {
+      if (!(await isOwnerOfPost(userId, postId))) {
+        return res.sendStatus(403);
+      }
+      await deletePost(postId);
+      return res.sendStatus(200);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Couldn't delete post!");
+    }
+  }
+);
+
+postRouter.patch(
+  "/edit",
+  check("postId").exists({ values: "falsy" }).isString().trim().notEmpty(),
+  check("text").exists({ values: "falsy" }).isString().trim().notEmpty(),
+  Validate,
+  async (req, res) => {
+    const userId = req.userId as string;
+    const postId = req.body.postId as string;
+    const text = req.body.text as string;
+    try {
+      if (!(await isOwnerOfPost(userId, postId))) {
+        return res.sendStatus(403);
+      }
+      await editPost(postId, text);
+      return res.sendStatus(200);
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Couldn't edit post!");
     }
   }
 );

@@ -53,6 +53,7 @@ export const commentSchema = z
 
 const postSchema = z.object({
   id: z.string(),
+  parent_id: z.string().nullish(),
   createdLocalDate: z.string(),
   text: z.string(),
   _count: z.object({
@@ -227,5 +228,63 @@ export const sharePost = async (
   } catch (err) {
     console.log(err);
     return null;
+  }
+};
+
+export const deletePost = async (request: Request, postId: string) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return false;
+    }
+    const deletePostResponse = await fetch(
+      `${process.env.BACKEND_URL}/post/delete`,
+      {
+        method: "DELETE",
+        headers: {
+          Cookie: cookie,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ postId }),
+      }
+    );
+    if (!deletePostResponse.ok) {
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.log(err);
+    return false;
+  }
+};
+
+export const editPost = async (
+  request: Request,
+  postId: string,
+  text: string
+) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return false;
+    }
+    const editPostReponse = await fetch(
+      `${process.env.BACKEND_URL}/post/edit`,
+      {
+        method: "PATCH",
+        headers: {
+          Cookie: cookie,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ postId, text }),
+      }
+    );
+    if (!editPostReponse.ok) {
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.log(err);
+    return false;
   }
 };

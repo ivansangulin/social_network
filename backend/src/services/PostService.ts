@@ -20,6 +20,7 @@ export const getUserPosts = async (
         parent_id: true,
         createdLocalDate: true,
         text: true,
+        photos: true,
         _count: {
           select: {
             likes: true,
@@ -74,17 +75,23 @@ export const getUserPosts = async (
   return userPostPaging;
 };
 
-export const createPost = async (userId: string, text: string) => {
+export const createPost = async (
+  userId: string,
+  text: string,
+  photos?: string[]
+) => {
   const post = await prisma.post.create({
     data: {
       user_id: userId,
       text: text,
+      photos: photos,
     },
     select: {
       id: true,
       parent_id: true,
       createdLocalDate: true,
       text: true,
+      photos: true,
       _count: {
         select: {
           likes: true,
@@ -160,6 +167,7 @@ export const getMainPagePosts = async (
         parent_id: true,
         createdLocalDate: true,
         text: true,
+        photos: true,
         _count: {
           select: {
             likes: true,
@@ -251,6 +259,7 @@ export const getPost = async (userId: string, postId: string) => {
         parent_id: true,
         createdLocalDate: true,
         text: true,
+        photos: true,
         user_id: true,
         _count: {
           select: {
@@ -410,6 +419,7 @@ export const sharePost = async (
       parent_id: true,
       createdLocalDate: true,
       text: true,
+      photos: true,
       _count: {
         select: {
           likes: true,

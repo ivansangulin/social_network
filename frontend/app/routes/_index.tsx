@@ -1,11 +1,31 @@
-import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
-import { Form, useFetcher, useLoaderData } from "@remix-run/react";
-import { useState, useEffect, useRef, useContext, FormEvent } from "react";
+import {
+  ActionFunctionArgs,
+  json,
+  LoaderFunctionArgs,
+  redirect,
+} from "@remix-run/node";
+import {
+  Form,
+  useActionData,
+  useFetcher,
+  useLoaderData,
+  useSubmit,
+} from "@remix-run/react";
+import { useState, useEffect, useRef, FormEvent, MouseEvent } from "react";
+import { CloudUpIcon, XMarkIcon } from "~/components/icons";
 import { Post } from "~/components/post";
-import { SetPostsContext, SocketContext } from "~/root";
+import { SetPostsContext } from "~/root";
 import { getMyFriends } from "~/service/friendship";
-import { getMainPagePosts, PostPaging, Post as PostType } from "~/service/post";
+import {
+  createNewPost,
+  getMainPagePosts,
+  PostPaging,
+  Post as PostType,
+} from "~/service/post";
 import { me } from "~/service/user";
+import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const [user, friendsPaging, postsPaging] = await Promise.all([
@@ -24,12 +44,25 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 };
 
+const actionSchema = zfd.formData({
+  text: zfd.text(),
+  photos: z.array(zfd.file()).nullish().or(zfd.file().nullish()),
+});
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const data = actionSchema.safeParse(formData);
+  if (data.success) {
+    return await createNewPost(request, formData);
+  } else {
+    return json({ error: "Post text can't be empty!", post: null });
+  }
+};
+
 export default function Index() {
   return (
     <div className="grow flex justify-center">
-      <div className="w-6/12 relative flex justify-center">
-        <Posts />
-      </div>
+      <Posts />
     </div>
   );
 }
@@ -86,8 +119,8 @@ const Posts = () => {
   };
 
   return (
-    <div className="w-full" ref={postContainerRef}>
-      <div className="mx-auto w-8/12 3xl:w-6/12 flex flex-col justify-center py-4 space-y-12">
+    <div className="mx-auto w-3/12" ref={postContainerRef}>
+      <div className="flex flex-col justify-center py-8 space-y-12">
         <CreatePost onNewPost={onNewPost} />
         {posts ? (
           posts.length > 0 && (
@@ -109,43 +142,132 @@ const Posts = () => {
   );
 };
 
+type FileItem = { id: string; file: File };
+
 const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
-  const socket = useContext(SocketContext);
   const { user, backendUrl } = useLoaderData<typeof loader>();
   const [text, setText] = useState<string>();
   const [creating, setCreating] = useState<boolean>(false);
+  const [showFileDrop, setShowFileDrop] = useState<boolean>(false);
+  const [files, setFiles] = useState<FileItem[]>([]);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const submit = useSubmit();
+  const actionData = useActionData<typeof action>();
+  const [error, setError] = useState<string | null>();
 
   const maxRows = 4;
   const defaultRows = 1;
   const defaultPictureWidth = 42;
+  const maxFileCount = 6;
 
   useEffect(() => {
-    if (socket) {
-      const handleNewPost = ({ post }: { post: PostType | string }) => {
-        if (typeof post !== "string" && textAreaRef.current) {
-          onNewPost(post);
-          setText("");
-          textAreaRef.current.style.height = `${defaultPictureWidth}px`;
-        }
-      };
-      socket.on("newPost", handleNewPost);
-      return () => {
-        socket.off("newPost", handleNewPost);
-      };
+    if (actionData) {
+      setCreating(false);
+      if (!actionData.error) {
+        onNewPost(actionData.post!);
+        setFiles([]);
+        setText("");
+      } else {
+        setError(actionData.error);
+      }
     }
-  }, [socket]);
+  }, [actionData]);
+
+  useEffect(() => {
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      setShowFileDrop(false);
+    };
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    const handleDragEnter = () => {
+      if (files.length < maxFileCount) setShowFileDrop(true);
+    };
+    const handleDragExit = () => {
+      if (files.length < maxFileCount) setShowFileDrop(false);
+    };
+    addEventListener("dragenter", handleDragEnter);
+    addEventListener("dragexit", handleDragExit);
+    addEventListener("dragover", handleDragOver);
+    addEventListener("drop", handleDrop);
+    return () => {
+      removeEventListener("dragenter", handleDragEnter);
+      removeEventListener("dragexit", handleDragExit);
+      removeEventListener("dragover", handleDragOver);
+      removeEventListener("drop", handleDrop);
+    };
+  }, [files.length]);
 
   const createPost = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setCreating(true);
-    socket?.emit("newPost", text, (finished: boolean) =>
-      setCreating(!finished)
-    );
+    const formData = new FormData(e.currentTarget);
+    for (const fileItem of files) {
+      formData.append("photos", fileItem.file as Blob);
+    }
+    submit(formData, {
+      method: "POST",
+      encType: "multipart/form-data",
+    });
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (files.length === maxFileCount) return;
+    setShowFileDrop(false);
+    const uploadedFiles: FileItem[] = [];
+    const maxFileSize = 8 * 1024 * 1024;
+    for (const file of e.dataTransfer.files) {
+      if (
+        (file.type === "image/jpeg" ||
+          file.type === "image/png" ||
+          file.type === "image/jpg") &&
+        file.size <= maxFileSize
+      ) {
+        uploadedFiles.push({ id: uuidv4(), file });
+      }
+    }
+    if (files.length + uploadedFiles.length > maxFileCount) {
+      setFiles((f) => [
+        ...f,
+        ...uploadedFiles.slice(0, maxFileCount - files.length),
+      ]);
+    } else {
+      setFiles((f) => [...f, ...uploadedFiles]);
+    }
+  };
+
+  const deleteFile = (e: MouseEvent<HTMLButtonElement>, fileId: string) => {
+    e.preventDefault();
+    setFiles((f) => [...f.filter((f) => f.id !== fileId)]);
   };
 
   return (
-    <Form className="w-full h-fit" onSubmit={createPost}>
+    <Form
+      className="w-full h-fit relative my-4"
+      onSubmit={createPost}
+      onDrop={handleDrop}
+    >
+      {error && (
+        <div className="absolute text-white bg-red-500 rounded-2xl px-4 py-2 -top-11 flex w-full space-x-4">
+          <div className="w-full">{error}</div>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              setError(null);
+            }}
+          >
+            <XMarkIcon className="stroke-white h-6 w-6" />
+          </button>
+        </div>
+      )}
+      {showFileDrop && (
+        <div className="z-10 absolute bg-stone-100 bg-opacity-85 w-full h-full top-0 left-0 flex flex-col justify-center items-center">
+          <CloudUpIcon className="h-10 w-10" />
+          <div className="font-semibold">Upload photos (max 8MB)</div>
+        </div>
+      )}
       <div className="border p-4 rounded-md space-y-4 bg-white">
         <div className="flex space-x-4 items-start">
           <div
@@ -167,7 +289,7 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
             className="w-full outline-none resize-none scrollbar-hidden text-base border py-2 px-3 rounded-2xl transition-height"
             style={{ height: `${defaultPictureWidth}px` }}
             value={text}
-            defaultValue={text}
+            autoComplete="off"
             rows={defaultRows}
             ref={textAreaRef}
             placeholder="What's on your mind?"
@@ -187,10 +309,33 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
           />
         </div>
         <hr />
+        {files.length > 0 && (
+          <>
+            <div className="">Uploaded photos</div>
+            <div className="flex flex-wrap">
+              {files.map(({ id, file }) => (
+                <div className="basis-1/3 p-1 relative group" key={id}>
+                  <button
+                    onClick={(e) => deleteFile(e, id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute p-2 top-0 right-0"
+                  >
+                    <XMarkIcon className="h-5 w-5 stroke-white bg-stone-400 rounded-full" />
+                  </button>
+                  <img
+                    className="w-full h-[80px] object-cover"
+                    src={URL.createObjectURL(file)}
+                    alt={file.name}
+                  />
+                </div>
+              ))}
+            </div>
+            <hr />
+          </>
+        )}
         <div className="flex justify-end items-center">
           <button
             type="submit"
-            className="bg-primary hover:bg-primary-dark text-white rounded-sm px-8 py-1 min-w-[100px]"
+            className="bg-primary hover:bg-primary-dark text-white rounded-xl px-8 py-1 min-w-[100px]"
           >
             {creating ? <div className="animate-bounce">...</div> : "Post"}
           </button>

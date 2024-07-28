@@ -24,6 +24,7 @@ import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { AnimatedDots } from "./animated-dots";
 import { SetPostsContext } from "~/root";
 import { CommentsPaging, RepliesPaging } from "~/service/comment";
+import { PhotoCarousel } from "./photo-carousel";
 
 const canUseDOM = !!(
   typeof window !== "undefined" &&
@@ -343,6 +344,13 @@ export const Post = ({ post }: { post: PostType }) => {
         </div>
       </div>
       <div>{postText}</div>
+      {post.photos && post.photos.length > 0 && (
+        <PhotoCarousel>
+          {post.photos.map((photoPath, index) => (
+            <img key={index} src={`${backendUrl}/image/post/${photoPath}`} className="grow-0 shrink-0 w-full object-cover h-[400px]"/>
+          ))}
+        </PhotoCarousel>
+      )}
       {post.parent_id &&
         (post.parent ? (
           <div className="flex flex-col space-y-4 p-4 border border-slate-300 rounded-lg">
@@ -758,10 +766,10 @@ const PostOptions = ({
   const defaultRows = 4;
 
   useEffect(() => {
-    if(!setIsOpen) {
+    if(!isOpen) {
       setEditPanelOpen(false);
     }
-  }, [setIsOpen])
+  }, [isOpen])
 
   const handleDelete = () => {
     setIsOpen(false);

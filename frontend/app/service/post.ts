@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getCookie } from "./user";
+import { json, redirect } from "@remix-run/node";
 
 export const replySchema = z
   .object({
@@ -56,6 +57,7 @@ const postSchema = z.object({
   parent_id: z.string().nullish(),
   createdLocalDate: z.string(),
   text: z.string(),
+  photos: z.array(z.string()).nullish(),
   _count: z.object({
     likes: z.number(),
     comments: z.number(),
@@ -286,5 +288,33 @@ export const editPost = async (
   } catch (err) {
     console.log(err);
     return false;
+  }
+};
+
+export const createNewPost = async (request: Request, data: FormData) => {
+  try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return redirect("/login");
+    }
+    const newPostResponse = await fetch(
+      `${process.env.BACKEND_URL}/post/create`,
+      {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+        },
+        body: data,
+      }
+    );
+    if (!newPostResponse.ok) {
+      console.log(newPostResponse)
+      return json({ error: "Failed to create new post!", post: null });
+    }
+    const post = postSchema.parse(await newPostResponse.json());
+    return { post, error: null };
+  } catch (err) {
+    console.log(err);
+    return json({ error: "Failed to create new post!", post: null });
   }
 };

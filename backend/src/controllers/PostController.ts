@@ -11,11 +11,16 @@ import {
   deletePost,
   isOwnerOfPost,
   editPost,
+  createPost,
 } from "../services/PostService";
 import { check } from "express-validator";
 import Validate from "../middleware/validate";
 import { areFriends } from "../services/FriendshipService";
 import { findUserDataFromUsername } from "../services/UserService";
+import formidable from "formidable";
+import path from "path";
+import fs from "fs";
+import { v4 as uuidv4 } from "uuid";
 
 const postRouter = Router();
 
@@ -183,5 +188,67 @@ postRouter.patch(
     }
   }
 );
+
+postRouter.post("/create", async (req, res) => {
+  try {
+    const userId = req.userId as string;
+    const maxFileSize = 8 * 1024 * 1024;
+    const allowedExtensions = [".jpg", ".jpeg", ".png"];
+    const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
+    const form = formidable({
+      uploadDir: path.join(__dirname, "../../public/image/post"),
+      keepExtensions: true,
+      maxFileSize: maxFileSize,
+      maxFiles: 6,
+    });
+    const [fields, files] = await form.parse(req);
+    if (!fields.text) {
+      return res.status(400).send("Text can't be empty!");
+    }
+    const text = fields.text![0];
+    const uploadedFiles: string[] = [];
+    if (files.photos) {
+      for (const file of files.photos) {
+        const extension = path
+          .extname(file.originalFilename ?? "")
+          .toLowerCase();
+        const mimeType = file.mimetype;
+        const oldPath = file.filepath;
+        if (
+          !allowedExtensions.includes(extension) ||
+          !mimeType ||
+          !allowedMimeTypes.includes(mimeType)
+        ) {
+          fs.unlinkSync(oldPath);
+          for (const file of uploadedFiles) {
+            fs.unlinkSync(path.join(__dirname, "../../public/image/post", file));
+          }
+          return res
+            .status(400)
+            .send("Invalid file type. Only .jpg, .jpeg, and .png are allowed.");
+        }
+        const newFileName = uuidv4() + extension;
+        const newPath = path.join(__dirname, "../../public/image/post", newFileName);
+        try {
+          fs.renameSync(oldPath, newPath);
+        } catch (err) {
+          console.log(err);
+          for (const file of uploadedFiles) {
+            fs.unlinkSync(path.join(__dirname, "../../public/image/post", file));
+          }
+          throw Error(
+            `Error occured renaming file ${file.originalFilename} to ${newFileName}`
+          );
+        }
+        uploadedFiles.push(newFileName);
+      }
+    }
+    const { post } = await createPost(userId, text, uploadedFiles);
+    return res.status(200).json(post);
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send("Couldn't create new post!");
+  }
+});
 
 export default postRouter;

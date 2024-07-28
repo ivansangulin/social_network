@@ -33,7 +33,8 @@ const app = express();
 
 app.use(json());
 app.use(cookieParser(env.SECRET_ACCESS_TOKEN));
-app.use("/image/profile_picture", RequiresAuth, express.static("public/image"));
+app.use("/image/profile_picture", RequiresAuth, express.static("public/image/profile_picture"));
+app.use("/image/post", RequiresAuth, express.static("public/image/post"));
 app.use("/user", userRouter);
 app.use("/friendship", RequiresAuth, friendshipRouter);
 app.use("/post", RequiresAuth, postRouter);

@@ -181,9 +181,9 @@ userRouter.post(
       const userId = req.userId as string;
       const maxFileSize = 8 * 1024 * 1024;
       const allowedExtensions = [".jpg", ".jpeg", ".png"];
-      const allowedMimeTypes = ["image/jpeg", "image/png"];
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
       const form = formidable({
-        uploadDir: path.join(__dirname, "../../public/image"),
+        uploadDir: path.join(__dirname, "../../public/image/profile_picture"),
         keepExtensions: true,
         maxFileSize: maxFileSize,
         maxFiles: 1,
@@ -193,7 +193,7 @@ userRouter.post(
       if (!file) {
         return res.status(400).send("No file uploaded");
       }
-      const extension = path.extname(file.originalFilename || "").toLowerCase();
+      const extension = path.extname(file.originalFilename ?? "").toLowerCase();
       const mimeType = file.mimetype;
       const oldPath = file.filepath;
 
@@ -208,7 +208,7 @@ userRouter.post(
         });
       }
       const newFileName = uuidv4() + extension;
-      const newPath = path.join(__dirname, "../../public/image", newFileName);
+      const newPath = path.join(__dirname, "../../public/image/profile_picture", newFileName);
       fs.rename(oldPath, newPath, async (err) => {
         if (err) {
           return res.status(500).json({ error: "Failed to save file" });
@@ -235,7 +235,7 @@ userRouter.delete(
       const { profile_picture_uuid } = await findMyself(userId);
       if (profile_picture_uuid) {
         fs.unlinkSync(
-          path.join(__dirname, "../../public/image", profile_picture_uuid)
+          path.join(__dirname, "../../public/image/profile_picture", profile_picture_uuid)
         );
         await deleteProfilePicture(userId);
       }

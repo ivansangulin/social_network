@@ -55,22 +55,6 @@ export const connectSocket = () => {
     };
     socket.on("message", messageListener);
 
-    const postListener = async (
-      text: string,
-      ack: (finished: boolean) => void
-    ) => {
-      try {
-        const post = await createPost(userId, text);
-        io.to(userId).emit("newPost", post);
-      } catch (err) {
-        console.log(err);
-        io.to(userId).emit("newPost", "Failed to create new post!");
-      } finally {
-        if (ack) ack(true);
-      }
-    };
-    socket.on("newPost", postListener);
-
     const typingListener = async ({
       chatId,
       typing,

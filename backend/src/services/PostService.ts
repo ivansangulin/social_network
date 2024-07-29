@@ -417,6 +417,7 @@ export const sharePost = async (
     select: {
       id: true,
       parent_id: true,
+      user_id: true,
       createdLocalDate: true,
       text: true,
       photos: true,
@@ -456,6 +457,9 @@ export const sharePost = async (
   });
 
   const { likes, ...props } = post;
+  if (userId !== post.user_id) {
+    await createNotification(post.user_id, postId, `has shared your post!`, userId);
+  }
   return {
     post: { liked: likes.length > 0, ...props },
   };

@@ -37,7 +37,7 @@ export const PhotoCarousel = ({ children }: { children: ReactNode[] }) => {
   }, [emblaApi]);
 
   return (
-    <div className="overflow-hidden relative group" ref={emblaRef}>
+    <div className="overflow-x-clip relative group" ref={emblaRef}>
       <div className="flex">{children}</div>
       {showDetails && (
         <>

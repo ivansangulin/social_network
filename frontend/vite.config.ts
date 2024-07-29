@@ -9,5 +9,13 @@ export default defineConfig({
   server: {
     port: 3000,
   },
-  plugins: [remix(), tsconfigPaths()],
+  plugins: [remix({
+    routes(defineRoutes) {
+      return defineRoutes((route) =>  {
+        route("/", "routes/_index.tsx", () => {
+          route("post/:postId", "routes/post.$postId.tsx");
+        })
+      })
+    }
+  }), tsconfigPaths()],
 });

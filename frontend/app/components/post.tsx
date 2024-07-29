@@ -300,7 +300,12 @@ export const Post = ({ post }: { post: PostType }) => {
       });
   };
   return (
-    <div className="flex flex-col space-y-4 p-4 border border-slate-300 rounded-lg bg-white relative">
+    <div
+      className={`w-full h-full flex flex-col space-y-4 pt-4 px-4 border border-slate-300 rounded-2xl bg-white overflow-y-scroll no-scrollbar relative ${
+        location.pathname.startsWith("/post/") && "max-h-[90vh]"
+      }`}
+      ref={commentsContainerRef}
+    >
       <div className="flex flex-col space-y-0.5">
         <div className="flex items-center space-x-2">
           {post.user.profile_picture_uuid && backendUrl ? (
@@ -347,7 +352,11 @@ export const Post = ({ post }: { post: PostType }) => {
       {post.photos && post.photos.length > 0 && (
         <PhotoCarousel>
           {post.photos.map((photoPath, index) => (
-            <img key={index} src={`${backendUrl}/image/post/${photoPath}`} className="grow-0 shrink-0 w-full object-cover h-[400px]"/>
+            <img
+              key={index}
+              src={`${backendUrl}/image/post/${photoPath}`}
+              className="grow-0 shrink-0 w-full object-cover h-[400px]"
+            />
           ))}
         </PhotoCarousel>
       )}
@@ -411,7 +420,11 @@ export const Post = ({ post }: { post: PostType }) => {
           onClick={
             location.pathname.includes("/post/")
               ? () => textAreaRef.current?.focus()
-              : () => navigate(`/post/${post.id}`)
+              : () =>
+                  navigate(`/post/${post.id}`, {
+                    state: { dialog: location.pathname === "/" },
+                    preventScrollReset: true,
+                  })
           }
         >
           <ChatBubbleBottomCenterText className="w-8 h-8 stroke-primary hover:scale-110 transition duration-100" />
@@ -419,11 +432,8 @@ export const Post = ({ post }: { post: PostType }) => {
         {!post.parent && <ShareDialog postId={post.id} />}
       </div>
       <hr />
-      <div className="flex flex-col space-y-4">
-        <div
-          className="flex flex-col space-y-4 max-h-[48rem] overflow-y-auto no-scrollbar"
-          ref={commentsContainerRef}
-        >
+      <div className="flex flex-col grow">
+        <div className="flex flex-col space-y-4 grow">
           {comments.map((comment) => (
             <Comment
               comment={comment}
@@ -435,27 +445,27 @@ export const Post = ({ post }: { post: PostType }) => {
             />
           ))}
         </div>
-        <div className="flex-col">
-          {reply && (
-            <div className="flex items-center space-x-4 ml-20 bg-secondary w-fit py-1 px-2 text-sm rounded-t-lg">
-              <div className="rounded-full overflow-hidden aspect-square max-w-6 bg-white">
-                {reply.user.profile_picture_uuid ? (
-                  <img
-                    alt=""
-                    src={`${backendUrl}/image/profile_picture/${reply.user.profile_picture_uuid}`}
-                    className="object-cover min-h-full"
-                  />
-                ) : (
-                  <img alt="" src="/images/default_profile_picture.png" />
-                )}
+        <div className="flex-col sticky bottom-0 w-full">
+          <div className="flex items-start bg-white py-4 relative">
+            {reply && (
+              <div className="flex items-center space-x-4 ml-20 bg-secondary w-fit py-1 px-2 text-sm rounded-t-lg absolute bottom-full border">
+                <div className="rounded-full overflow-hidden aspect-square max-w-6 bg-white">
+                  {reply.user.profile_picture_uuid ? (
+                    <img
+                      alt=""
+                      src={`${backendUrl}/image/profile_picture/${reply.user.profile_picture_uuid}`}
+                      className="object-cover min-h-full"
+                    />
+                  ) : (
+                    <img alt="" src="/images/default_profile_picture.png" />
+                  )}
+                </div>
+                <div className="self-start">{`Replying to ${reply.user.username}`}</div>
+                <button className="" onClick={() => setReply(null)}>
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
               </div>
-              <div className="self-start">{`Replying to ${reply.user.username}`}</div>
-              <button className="" onClick={() => setReply(null)}>
-                <XMarkIcon className="h-5 w-5" />
-              </button>
-            </div>
-          )}
-          <div className="flex space-x-4 items-start">
+            )}
             <div
               className="rounded-full overflow-hidden aspect-square"
               style={{ maxWidth: `${defaultPictureHeight}px` }}
@@ -470,7 +480,7 @@ export const Post = ({ post }: { post: PostType }) => {
                 <img alt="" src="/images/default_profile_picture.png" />
               )}
             </div>
-            <div className="border rounded-2xl py-2 px-3 w-full flex space-x-4 bg-secondary">
+            <div className="border rounded-2xl ml-4 py-2 px-3 w-full flex space-x-4 bg-secondary">
               <textarea
                 ref={textAreaRef}
                 rows={defaultRows}
@@ -766,10 +776,10 @@ const PostOptions = ({
   const defaultRows = 4;
 
   useEffect(() => {
-    if(!isOpen) {
+    if (!isOpen) {
       setEditPanelOpen(false);
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   const handleDelete = () => {
     setIsOpen(false);

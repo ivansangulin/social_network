@@ -6,12 +6,20 @@ import {
 } from "@remix-run/node";
 import {
   Form,
+  Outlet,
   useActionData,
   useFetcher,
   useLoaderData,
+  useLocation,
   useSubmit,
 } from "@remix-run/react";
-import { useState, useEffect, useRef, FormEvent, MouseEvent } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  FormEvent,
+  MouseEvent,
+} from "react";
 import { CloudUpIcon, XMarkIcon } from "~/components/icons";
 import { Post } from "~/components/post";
 import { SetPostsContext } from "~/root";
@@ -26,6 +34,7 @@ import { me } from "~/service/user";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import React from "react";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const [user, friendsPaging, postsPaging] = await Promise.all([
@@ -60,9 +69,33 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Index() {
+  const location = useLocation();
+  const isPost = location.pathname.startsWith("/post/");
+  const dialog = !!location.state?.dialog;
+  const postOnly = isPost && !dialog;
+
+  useEffect(() => {
+    if(dialog) {
+      const beforeUnload = () => {
+        history.replaceState({}, "");
+      };
+      window.addEventListener("beforeunload", beforeUnload);
+      return () => {
+        window.removeEventListener("beforeunload", beforeUnload);
+      }
+    }
+  }, [location.pathname])
+
   return (
     <div className="grow flex justify-center">
-      <Posts />
+      {postOnly ? (
+        <Outlet context={{ dialog: false }} />
+      ) : (
+        <>
+          <Outlet context={{ dialog: true }} />
+          <Posts />
+        </>
+      )}
     </div>
   );
 }
@@ -71,7 +104,6 @@ const Posts = () => {
   const { postsPaging } = useLoaderData<typeof loader>();
   const cursor = useRef<string>(postsPaging?.cursor ?? "");
   const [posts, setPosts] = useState<PostType[]>(postsPaging?.posts ?? []);
-  const postContainerRef = useRef<HTMLDivElement>(null);
   const fetcher = useFetcher();
   const fetching = useRef<boolean>(false);
   const hasMore = useRef<boolean>(
@@ -119,7 +151,7 @@ const Posts = () => {
   };
 
   return (
-    <div className="mx-auto w-3/12" ref={postContainerRef}>
+    <div className="mx-auto max-w-xl w-full">
       <div className="flex flex-col justify-center py-8 space-y-12">
         <CreatePost onNewPost={onNewPost} />
         {posts ? (
@@ -268,7 +300,7 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
           <div className="font-semibold">Upload photos (max 8MB)</div>
         </div>
       )}
-      <div className="border p-4 rounded-md space-y-4 bg-white">
+      <div className="border p-4 rounded-2xl space-y-4 bg-white">
         <div className="flex space-x-4 items-start">
           <div
             className="rounded-full overflow-hidden aspect-square"

@@ -69,7 +69,7 @@ export default () => {
   }, [fetcher.data]);
 
   return (
-    <div className="w-6/12">
+    <div className="max-w-xl w-full">
       {posts ? (
         posts.length > 0 ? (
           <SetPostsContext.Provider value={setPosts}>

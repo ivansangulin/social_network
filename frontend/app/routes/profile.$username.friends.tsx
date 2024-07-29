@@ -1,5 +1,5 @@
 import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
-import { useLoaderData, useFetcher, useParams } from "@remix-run/react";
+import { useLoaderData, useFetcher, useParams, Link } from "@remix-run/react";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   Friend,
@@ -100,8 +100,8 @@ export default () => {
   };
 
   return (
-    <div className="flex flex-col space-y-6 w-full items-center">
-      <div className="flex relative space-x-4 items-center w-6/12">
+    <div className="flex flex-col space-y-6 items-center">
+      <div className="flex relative space-x-4 items-center w-64">
         <input
           type="text"
           className="rounded-lg min-h-12 px-4 border border-slate-300 w-full"
@@ -114,11 +114,12 @@ export default () => {
       </div>
       {friends ? (
         friends.length > 0 ? (
-          <div className="grid grid-cols-3 gap-4 max-h-[100%] min-w-full">
+          <div className="flex flex-col space-y-4 w-[32rem]">
             {friends.map((friend) => (
-              <div
+              <Link
                 key={friend.id}
-                className="flex items-center space-x-4 border-2 border-slate-300 rounded-md col-span-1 p-2"
+                className="w-full flex items-center space-x-4 border rounded-2xl p-2 bg-white"
+                to={`/profile/${friend.username}/posts`}
               >
                 {friend.profile_picture_uuid && backendUrl ? (
                   <div className="rounded-full overflow-hidden aspect-square max-w-[50px]">
@@ -134,7 +135,7 @@ export default () => {
                   </div>
                 )}
                 <div className="text-xl">{friend.username}</div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (

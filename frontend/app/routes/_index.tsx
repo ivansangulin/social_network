@@ -13,14 +13,8 @@ import {
   useLocation,
   useSubmit,
 } from "@remix-run/react";
-import {
-  useState,
-  useEffect,
-  useRef,
-  FormEvent,
-  MouseEvent,
-} from "react";
-import { CloudUpIcon, XMarkIcon } from "~/components/icons";
+import { useState, useEffect, useRef, FormEvent, MouseEvent } from "react";
+import { CloudUpIcon, PhotoIcon, XMarkIcon } from "~/components/icons";
 import { Post } from "~/components/post";
 import { SetPostsContext } from "~/root";
 import { getMyFriends } from "~/service/friendship";
@@ -75,16 +69,16 @@ export default function Index() {
   const postOnly = isPost && !dialog;
 
   useEffect(() => {
-    if(dialog) {
+    if (dialog) {
       const beforeUnload = () => {
         history.replaceState({}, "");
       };
       window.addEventListener("beforeunload", beforeUnload);
       return () => {
         window.removeEventListener("beforeunload", beforeUnload);
-      }
+      };
     }
-  }, [location.pathname])
+  }, [location.pathname]);
 
   return (
     <div className="grow flex justify-center">
@@ -178,14 +172,17 @@ type FileItem = { id: string; file: File };
 
 const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
   const { user, backendUrl } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+  const submit = useSubmit();
+
   const [text, setText] = useState<string>();
   const [creating, setCreating] = useState<boolean>(false);
   const [showFileDrop, setShowFileDrop] = useState<boolean>(false);
   const [files, setFiles] = useState<FileItem[]>([]);
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const submit = useSubmit();
-  const actionData = useActionData<typeof action>();
   const [error, setError] = useState<string | null>();
+
+  const inputFileRef = useRef<HTMLInputElement>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const maxRows = 4;
   const defaultRows = 1;
@@ -196,6 +193,8 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
     if (actionData) {
       setCreating(false);
       if (!actionData.error) {
+        if(textAreaRef.current)
+          textAreaRef.current.style.height = `${defaultPictureWidth}px`;
         onNewPost(actionData.post!);
         setFiles([]);
         setText("");
@@ -275,6 +274,37 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
     setFiles((f) => [...f.filter((f) => f.id !== fileId)]);
   };
 
+  const openFileSelector = (e: FormEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    inputFileRef.current?.click();
+  }
+
+  const uploadFiles = (e: FormEvent<HTMLInputElement>) => {
+    if (files.length === maxFileCount) return;
+    if (e.currentTarget.files) {
+      const uploadedFiles: FileItem[] = [];
+      const maxFileSize = 8 * 1024 * 1024;
+      for (const file of e.currentTarget.files) {
+        if (
+          (file.type === "image/jpeg" ||
+            file.type === "image/png" ||
+            file.type === "image/jpg") &&
+          file.size <= maxFileSize
+        ) {
+          uploadedFiles.push({ id: uuidv4(), file });
+        }
+      }
+      if (files.length + uploadedFiles.length > maxFileCount) {
+        setFiles((f) => [
+          ...f,
+          ...uploadedFiles.slice(0, maxFileCount - files.length),
+        ]);
+      } else {
+        setFiles((f) => [...f, ...uploadedFiles]);
+      }
+    }
+  };
+
   return (
     <Form
       className="w-full h-fit relative my-4"
@@ -298,6 +328,7 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
         <div className="z-10 absolute bg-stone-100 bg-opacity-85 w-full h-full top-0 left-0 flex flex-col justify-center items-center">
           <CloudUpIcon className="h-10 w-10" />
           <div className="font-semibold">Upload photos (max 8MB)</div>
+          <div className="font-semibold">Supported format: .jpg, .jpeg and .png</div>
         </div>
       )}
       <div className="border p-4 rounded-2xl space-y-4 bg-white">
@@ -343,7 +374,7 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
         <hr />
         {files.length > 0 && (
           <>
-            <div className="">Uploaded photos</div>
+            <div className="">Uploaded photos (max 6)</div>
             <div className="flex flex-wrap">
               {files.map(({ id, file }) => (
                 <div className="basis-1/3 p-1 relative group" key={id}>
@@ -364,7 +395,18 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
             <hr />
           </>
         )}
-        <div className="flex justify-end items-center">
+        <div className="flex justify-between items-center space-x-4">
+          <input
+            type="file"
+            accept=".jpeg,.jpg,.png"
+            multiple
+            className="hidden"
+            ref={inputFileRef}
+            onChange={uploadFiles}
+          />
+          <button onClick={openFileSelector}>
+            <PhotoIcon className="w-8 h-8 stroke-primary" />
+          </button>
           <button
             type="submit"
             className="bg-primary hover:bg-primary-dark text-white rounded-xl px-8 py-1 min-w-[100px]"

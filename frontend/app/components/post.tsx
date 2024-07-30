@@ -390,6 +390,17 @@ export const Post = ({ post }: { post: PostType }) => {
               </div>
             </div>
             <div>{post.parent.text}</div>
+            {post.parent.photos && post.parent.photos.length > 0 && (
+              <PhotoCarousel>
+                {post.parent.photos.map((photoPath, index) => (
+                  <img
+                    key={index}
+                    src={`${backendUrl}/image/post/${photoPath}`}
+                    className="grow-0 shrink-0 w-full object-cover h-[400px]"
+                  />
+                ))}
+              </PhotoCarousel>
+            )}
           </div>
         ) : (
           <div className="flex space-x-4 items-center bg-stone-100 p-4 rounded-2xl">

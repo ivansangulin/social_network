@@ -74,6 +74,7 @@ const postSchema = z.object({
       }),
       text: z.string(),
       createdLocalDate: z.string(),
+      photos: z.array(z.string()).nullish(),
     })
     .nullish(),
   liked: z.boolean(),

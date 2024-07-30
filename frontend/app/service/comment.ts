@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { getCookie } from "./user";
 import { commentSchema, replySchema } from "./post";
 
 const commentsPagingSchema = z.object({
@@ -18,16 +17,12 @@ export type CommentsPaging = z.infer<typeof commentsPagingSchema>;
 export type RepliesPaging = z.infer<typeof repliesPagingSchema>;
 
 export const commentOnPost = async (
-  request: Request,
+  cookie: string,
   text: string,
   postId: string,
   commentId?: string
 ) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return null;
-    }
     const commentResponse = await fetch(`${process.env.BACKEND_URL}/comment`, {
       method: "POST",
       headers: {
@@ -48,15 +43,11 @@ export const commentOnPost = async (
 };
 
 export const likeComment = async (
-  request: Request,
+  cookie: string,
   commentId: string,
   liked: boolean
 ) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return false;
-    }
     const likeResponse = await fetch(
       `${process.env.BACKEND_URL}/comment/like`,
       {
@@ -76,15 +67,11 @@ export const likeComment = async (
 };
 
 export const getComments = async (
-  request: Request,
+  cookie: string,
   postId: string,
   cursor?: string
 ) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return null;
-    }
     const commentsResponse = await fetch(
       `${process.env.BACKEND_URL}/comment?postId=${postId}&cursor=${
         cursor ?? ""
@@ -108,15 +95,11 @@ export const getComments = async (
 };
 
 export const getReplies = async (
-  request: Request,
+  cookie: string,
   commentId: string,
   cursor?: string
 ) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return null;
-    }
     const repliesResponse = await fetch(
       `${
         process.env.BACKEND_URL

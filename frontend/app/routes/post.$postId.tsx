@@ -3,13 +3,17 @@ import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { useLoaderData, useNavigate, useOutletContext } from "@remix-run/react";
 import { Post } from "~/components/post";
 import { getPost } from "~/service/post";
-import { me } from "~/service/user";
+import { getCookie, me } from "~/service/user";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const postId = params.postId!;
+  const cookie = getCookie(request);
+  if (!cookie) {
+    return redirect("/login");
+  }
   const [user, post] = await Promise.all([
-    me(request),
-    getPost(request, postId),
+    me(request, cookie),
+    getPost(cookie, postId),
   ]);
   if (!user) {
     return redirect("/login");

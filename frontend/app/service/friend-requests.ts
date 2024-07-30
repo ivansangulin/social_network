@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { getCookie } from "./user";
 
 const friendRequestSchema = z.object({
   read: z.boolean(),
@@ -18,12 +17,8 @@ const pendingRequestsSchema = z.object({
 export type PendingRequests = z.infer<typeof pendingRequestsSchema>;
 export type FriendRequest = z.infer<typeof friendRequestSchema>;
 
-export const getPendingFriendRequests = async (request: Request) => {
+export const getPendingFriendRequests = async (cookie: string) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return null;
-    }
     const friendRequestsResponse = await fetch(
       `${process.env.BACKEND_URL}/friend-request`,
       {
@@ -43,12 +38,8 @@ export const getPendingFriendRequests = async (request: Request) => {
   }
 };
 
-export const addFriend = async (request: Request, friendId: string) => {
+export const addFriend = async (cookie: string, friendId: string) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return false;
-    }
     const addFriendResponse = await fetch(
       `${process.env.BACKEND_URL}/friend-request/add`,
       {
@@ -70,12 +61,8 @@ export const addFriend = async (request: Request, friendId: string) => {
   }
 };
 
-export const removeFriend = async (request: Request, friendId: string) => {
+export const removeFriend = async (cookie: string, friendId: string) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return false;
-    }
     const removeFriendResponse = await fetch(
       `${process.env.BACKEND_URL}/friend-request/remove`,
       {
@@ -98,15 +85,11 @@ export const removeFriend = async (request: Request, friendId: string) => {
 };
 
 export const handleFriendRequest = async (
-  request: Request,
+  cookie: string,
   friendId: string,
   accepted: boolean
 ) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return false;
-    }
     const handleFriendRequestResponse = await fetch(
       `${process.env.BACKEND_URL}/friend-request/handle`,
       {

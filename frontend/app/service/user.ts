@@ -52,8 +52,7 @@ export type SearchUser = z.infer<typeof searchUserSchema>;
 export type SearchUsersPaging = z.infer<typeof searchUsersPagingSchema>;
 type ChangePasswordData = z.infer<typeof changePasswordDataSchema>;
 
-export const me = async (request: Request) => {
-  const cookie = getCookie(request);
+export const me = async (request: Request, cookie: string | undefined) => {
   const url = new URL(request.url);
   if (
     !cookie ||
@@ -89,18 +88,9 @@ export type ErrorType = {
 };
 
 export const getUserProfileData = async (
-  request: Request,
+  cookie: string,
   username: string
 ) => {
-  const cookie = getCookie(request);
-  if (!cookie) {
-    return {
-      error: {
-        status: 500,
-        errorMessage: "Error occured fetching user data!",
-      },
-    };
-  }
   try {
     const userDataResponse = await fetch(
       `${process.env.BACKEND_URL}/user/user-data?username=${username}`,
@@ -131,12 +121,8 @@ export const getUserProfileData = async (
   }
 };
 
-export const deleteProfilePicture = async (request: Request) => {
+export const deleteProfilePicture = async (cookie: string) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return false;
-    }
     const deleteProfilePictureResponse = await fetch(
       `${process.env.BACKEND_URL}/user/delete-profile-picture`,
       {
@@ -153,12 +139,8 @@ export const deleteProfilePicture = async (request: Request) => {
   }
 };
 
-export const uploadProfilePicture = async (request: Request, photo: Blob) => {
+export const uploadProfilePicture = async (cookie: string, photo: Blob) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return false;
-    }
     const extension = photo.type.split("/")[1];
     const file = new File([photo], `photo.${extension}`, { type: photo.type });
     const formData = new FormData();
@@ -181,14 +163,10 @@ export const uploadProfilePicture = async (request: Request, photo: Blob) => {
 };
 
 export const editProfileData = async (
-  request: Request,
+  cookie: string,
   data: EditProfileData
 ) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return json({ error: "Error occured editing data!" });
-    }
     const editProfileDataResponse = await fetch(
       `${process.env.BACKEND_URL}/user/edit`,
       {
@@ -211,15 +189,11 @@ export const editProfileData = async (
 };
 
 export const searchUsers = async (
-  request: Request,
+  cookie: string,
   search: string,
   cursor: string | null
 ) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return [];
-    }
     const searchUsersResponse = await fetch(
       `${process.env.BACKEND_URL}/user/search?search=${search}${
         cursor ? `&cursor=${cursor}` : ""
@@ -245,14 +219,10 @@ export const searchUsers = async (
 };
 
 export const changePassword = async (
-  request: Request,
+  cookie: string,
   data: ChangePasswordData
 ) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return json({ error: "Error occured while changing password!" });
-    }
     const changePasswordResponse = await fetch(
       `${process.env.BACKEND_URL}/user/change-password`,
       {

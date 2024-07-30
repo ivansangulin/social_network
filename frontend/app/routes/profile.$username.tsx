@@ -4,6 +4,7 @@ import { redirect } from "react-router";
 import { MyProfile, UserProfile } from "~/components/profile";
 import {
   ErrorType,
+  getCookie,
   getUserProfileData,
   me,
   MyData,
@@ -12,14 +13,15 @@ import {
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { username } = params;
-  const myData = await me(request);
-  if (!myData) {
+  const cookie = getCookie(request);
+  const myData = await me(request, cookie);
+  if (!myData || !cookie) {
     return redirect("/login");
   }
   if (username === myData.username) {
     return json({ myData });
   } else {
-    const { userData, error } = await getUserProfileData(request, username!);
+    const { userData, error } = await getUserProfileData(cookie, username!);
     if (userData && userData) {
       return json({ userData });
     } else {

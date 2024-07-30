@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { getCookie } from "./user";
-import { json, redirect } from "@remix-run/node";
+import { json } from "@remix-run/node";
 
 export const replySchema = z
   .object({
@@ -94,13 +93,9 @@ export type CommentType = z.infer<typeof commentSchema>;
 export type Reply = z.infer<typeof replySchema>;
 
 export const getMainPagePosts = async (
-  request: Request,
+  cookie: string,
   cursor: string | null
 ) => {
-  const cookie = getCookie(request);
-  if (!cookie) {
-    return null;
-  }
   try {
     const postsResponse = await fetch(
       `${process.env.BACKEND_URL}/post/main-page-posts?cursor=${cursor ?? ""}`,
@@ -123,14 +118,10 @@ export const getMainPagePosts = async (
 };
 
 export const getUserPosts = async (
-  request: Request,
+  cookie: string,
   username: string,
   cursor: string | null
 ) => {
-  const cookie = getCookie(request);
-  if (!cookie) {
-    return null;
-  }
   try {
     const postsResponse = await fetch(
       `${process.env.BACKEND_URL}/post/user-posts?username=${username}&cursor=${
@@ -155,15 +146,11 @@ export const getUserPosts = async (
 };
 
 export const likePost = async (
-  request: Request,
+  cookie: string,
   liked: boolean,
   postId: string
 ) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return false;
-    }
     const likeResponse = await fetch(`${process.env.BACKEND_URL}/post/like`, {
       method: "POST",
       headers: {
@@ -179,12 +166,8 @@ export const likePost = async (
   }
 };
 
-export const getPost = async (request: Request, postId: string) => {
+export const getPost = async (cookie: string, postId: string) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return null;
-    }
     const postResponse = await fetch(
       `${process.env.BACKEND_URL}/post?postId=${postId}`,
       {
@@ -206,15 +189,11 @@ export const getPost = async (request: Request, postId: string) => {
 };
 
 export const sharePost = async (
-  request: Request,
+  cookie: string,
   postId: string,
   text: string | undefined
 ) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return null;
-    }
     const shareResponse = await fetch(`${process.env.BACKEND_URL}/post/share`, {
       method: "POST",
       headers: {
@@ -234,12 +213,8 @@ export const sharePost = async (
   }
 };
 
-export const deletePost = async (request: Request, postId: string) => {
+export const deletePost = async (cookie: string, postId: string) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return false;
-    }
     const deletePostResponse = await fetch(
       `${process.env.BACKEND_URL}/post/delete`,
       {
@@ -262,15 +237,11 @@ export const deletePost = async (request: Request, postId: string) => {
 };
 
 export const editPost = async (
-  request: Request,
+  cookie: string,
   postId: string,
   text: string
 ) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return false;
-    }
     const editPostReponse = await fetch(
       `${process.env.BACKEND_URL}/post/edit`,
       {
@@ -292,12 +263,8 @@ export const editPost = async (
   }
 };
 
-export const createNewPost = async (request: Request, data: FormData) => {
+export const createNewPost = async (cookie: string, data: FormData) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return redirect("/login");
-    }
     const newPostResponse = await fetch(
       `${process.env.BACKEND_URL}/post/create`,
       {
@@ -309,7 +276,7 @@ export const createNewPost = async (request: Request, data: FormData) => {
       }
     );
     if (!newPostResponse.ok) {
-      console.log(newPostResponse)
+      console.log(newPostResponse);
       return json({ error: "Failed to create new post!", post: null });
     }
     const post = postSchema.parse(await newPostResponse.json());

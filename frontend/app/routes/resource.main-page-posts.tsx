@@ -3,13 +3,14 @@ import { getMainPagePosts } from "~/service/post";
 import { getCookie } from "~/service/user";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  if (!getCookie(request)) {
-    return redirect("/login");
-  }
   const params = new URL(request.url).searchParams;
   const cursor = params.get("cursor");
   try {
-    const posts = await getMainPagePosts(request, cursor);
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return redirect("/login");
+    }
+    const posts = await getMainPagePosts(cookie, cursor);
     return json(posts);
   } catch (err) {
     console.log(err);

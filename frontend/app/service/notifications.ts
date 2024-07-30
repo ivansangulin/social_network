@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { getCookie } from "./user";
 
 const notificationSchema = z.object({
   id: z.string(),
@@ -21,12 +20,8 @@ const notificationDataSchema = z.object({
 export type NotificationType = z.infer<typeof notificationSchema>;
 export type NotificationData = z.infer<typeof notificationDataSchema>;
 
-export const findMyNotifications = async (request: Request) => {
+export const findMyNotifications = async (cookie: string) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return null;
-    }
     const notificationsResponse = await fetch(
       `${process.env.BACKEND_URL}/notification/my-notifications`,
       {

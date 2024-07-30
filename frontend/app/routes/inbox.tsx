@@ -40,14 +40,18 @@ import {
   MessagesPaging,
 } from "~/service/chat";
 import { Friend, FriendsPagingType } from "~/service/friendship";
-import { me } from "~/service/user";
+import { getCookie, me } from "~/service/user";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const params = new URL(request.url).searchParams;
   const cursor = params.get("cursor");
+  const cookie = getCookie(request);
+  if (!cookie) {
+    return redirect("/login");
+  }
   const [user, chatsPaging] = await Promise.all([
-    me(request),
-    getChats(request, cursor),
+    me(request, cookie),
+    getChats(cookie, cursor),
   ]);
   if (!user) {
     return redirect("/login");
@@ -57,10 +61,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
+    const cookie = getCookie(request);
+    if (!cookie) {
+      return redirect("/login");
+    }
     const friendId = z
       .string()
       .parse((await request.formData()).get("friendId"));
-    return await getNewChat(request, friendId);
+    return await getNewChat(cookie, friendId);
   } catch (err) {
     console.log(err);
     return null;
@@ -370,7 +378,7 @@ const FriendsFinder = ({
 }) => {
   const fetcher = useFetcher();
   const backendUrl = useServerUrl();
-  const fetching = useRef<boolean>(false);
+  const [fetching, setFetching] = useState<boolean>(false);
   const [friends, setFriends] = useState<Friend[]>([]);
   const search = useRef<string>("");
   const cursor = useRef<string>("");
@@ -395,7 +403,7 @@ const FriendsFinder = ({
       hasMore.current =
         friends.length + fetcherFriends.length !== count.current;
     }
-    fetching.current = false;
+    setFetching(false);
   }, [fetcher.data]);
 
   const handleSearch = (e: FormEvent<HTMLInputElement>) => {
@@ -404,19 +412,21 @@ const FriendsFinder = ({
     clearTimeout(timeoutRef.current);
     if (search.current !== "") {
       timeoutRef.current = setTimeout(() => {
-        fetching.current = true;
+        setFetching(true);
         fetcher.load(
           `/resource/get-friends?search=${search.current}${
             !newSearch.current ? `&cursor=${cursor.current}` : ""
           }`
         );
       }, debounce);
+    } else {
+      setFriends([]);
     }
   };
   return (
     <>
       <hr />
-      <div className="w-full flex space-x-4">
+      <div className="w-full flex space-x-4 relative">
         <div className="font-semibold text-lg">Friend:</div>
         <input
           className="w-full outline-none"
@@ -425,33 +435,40 @@ const FriendsFinder = ({
           placeholder="Search..."
           disabled={fetchingChat}
         />
+        {fetching && (
+          <div className="absolute top-0 right-0 animate-bounce">...</div>
+        )}
       </div>
       <hr />
       <div className="flex flex-col h-[28rem] overflow-y-auto scrollbar-thin">
-        {friends.map((friend) => (
-          <button
-            className="hover:bg-stone-100"
-            key={friend.id}
-            onClick={() => onFriendSelect(friend)}
-          >
-            <div className="flex items-center space-x-3 p-2">
-              {friend.profile_picture_uuid && backendUrl ? (
-                <img
-                  alt=""
-                  src={`${backendUrl}/image/profile_picture/${friend.profile_picture_uuid}`}
-                  className="object-cover rounded-full aspect-square max-w-[40px]"
-                />
-              ) : (
-                <img
-                  alt=""
-                  src="/images/default_profile_picture.png"
-                  className="max-w-[40px]"
-                />
-              )}
-              <div className="">{friend.username}</div>
-            </div>
-          </button>
-        ))}
+        {friends.length > 0 ? (
+          friends.map((friend) => (
+            <button
+              className="hover:bg-stone-100"
+              key={friend.id}
+              onClick={() => onFriendSelect(friend)}
+            >
+              <div className="flex items-center space-x-3 p-2">
+                {friend.profile_picture_uuid && backendUrl ? (
+                  <img
+                    alt=""
+                    src={`${backendUrl}/image/profile_picture/${friend.profile_picture_uuid}`}
+                    className="object-cover rounded-full aspect-square max-w-[40px]"
+                  />
+                ) : (
+                  <img
+                    alt=""
+                    src="/images/default_profile_picture.png"
+                    className="max-w-[40px]"
+                  />
+                )}
+                <div className="">{friend.username}</div>
+              </div>
+            </button>
+          ))
+        ) : (
+          <>No account found.</>
+        )}
       </div>
     </>
   );
@@ -751,7 +768,10 @@ const ActiveChat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex w-full border-b border-secondary p-4 bg-white">
-        <Link to={`/profile/${props.chat.user.username}/posts`} className="flex items-center space-x-2">
+        <Link
+          to={`/profile/${props.chat.user.username}/posts`}
+          className="flex items-center space-x-2"
+        >
           {props.chat.user.profile_picture_uuid && backendUrl ? (
             <img
               alt=""

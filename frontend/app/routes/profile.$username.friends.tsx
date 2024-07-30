@@ -7,20 +7,21 @@ import {
   getMyFriends,
   getUserFriends,
 } from "~/service/friendship";
-import { me } from "~/service/user";
+import { getCookie, me } from "~/service/user";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const user = await me(request);
-  if (!user) {
+  const cookie = getCookie(request);
+  const user = await me(request, cookie);
+  if (!user || !cookie) {
     return redirect("/login");
   }
   const username = params.username;
   if (username) {
     let friendsPaging;
     if (username === user.username) {
-      friendsPaging = await getMyFriends(request, null, null);
+      friendsPaging = await getMyFriends(cookie, null, null);
     } else {
-      friendsPaging = await getUserFriends(request, username, null, null);
+      friendsPaging = await getUserFriends(cookie, username, null, null);
     }
     return json({ user, friendsPaging, backendUrl: process.env.BACKEND_URL });
   } else {

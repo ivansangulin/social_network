@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { getCookie } from "./user";
 
 export const friendSchema = z.object({
   username: z.string(),
@@ -22,14 +21,10 @@ export type FriendsPagingType = z.infer<typeof friendsPagingSchema>;
 export type Friend = z.infer<typeof friendSchema>;
 
 export const getMyFriends = async (
-  request: Request,
+  cookie: string,
   cursor: string | null,
   search: string | null
 ) => {
-  const cookie = getCookie(request);
-  if (!cookie) {
-    return null;
-  }
   try {
     const friendsResponse = await fetch(
       `${process.env.BACKEND_URL}/friendship/my-friends?cursor=${
@@ -55,15 +50,11 @@ export const getMyFriends = async (
 };
 
 export const getUserFriends = async (
-  request: Request,
+  cookie: string,
   username: string,
   cursor: string | null,
   search: string | null
 ) => {
-  const cookie = getCookie(request);
-  if (!cookie) {
-    return null;
-  }
   try {
     const friendsResponse = await fetch(
       `${

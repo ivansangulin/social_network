@@ -1,15 +1,23 @@
-import { ActionFunctionArgs, json } from "@remix-run/node";
-import { Form, useActionData, useNavigation } from "@remix-run/react";
+import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
+import { Form, Link, useActionData, useNavigation } from "@remix-run/react";
 import { useState } from "react";
 import { AnimatedDots } from "~/components/animated-dots";
 import { useUserData } from "~/hooks/useUserData";
-import { changePassword, changePasswordDataSchema } from "~/service/user";
+import {
+  changePassword,
+  changePasswordDataSchema,
+  getCookie,
+} from "~/service/user";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const cookie = getCookie(request);
+  if (!cookie) {
+    return redirect("/login");
+  }
   const formData = await request.formData();
   const data = changePasswordDataSchema.safeParse(formData);
   if (data.success) {
-    return await changePassword(request, data.data);
+    return await changePassword(cookie, data.data);
   } else {
     return json({ error: "Data can't be empty!" });
   }
@@ -87,7 +95,7 @@ export default () => {
 
         <button
           type="submit"
-          className={`!mt-8 p-2 text-white text-xl bg-primary ${
+          className={`p-2 text-white text-xl bg-primary ${
             navigation.state !== "idle"
               ? "cursor-not-allowed"
               : "hover:bg-primary-dark"
@@ -102,6 +110,13 @@ export default () => {
             </div>
           )}
         </button>
+
+        <Link
+          to="/profile/edit"
+          className="!mt-6 text-blue-500 hover:underline text-lg"
+        >
+          Edit profile
+        </Link>
 
         {!!actionData?.error && (
           <div className="mt-2 text-center text-bold text-red-500 text-xl">

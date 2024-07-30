@@ -10,7 +10,7 @@ import {
 } from "@remix-run/react";
 import stylesheet from "./tailwind.css?url";
 import { Navbar } from "./components/navbar";
-import { me } from "./service/user";
+import { getCookie, me } from "./service/user";
 import {
   createContext,
   Dispatch,
@@ -27,7 +27,8 @@ export const links: LinksFunction = () => [
 ];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const user = await me(request);
+  const cookie = getCookie(request);
+  const user = await me(request, cookie);
   if (user) {
     return json({ user, backendURL: process.env.BACKEND_URL });
   }

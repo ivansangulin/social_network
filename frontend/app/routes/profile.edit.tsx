@@ -1,17 +1,25 @@
 import { Field, Label, Switch } from "@headlessui/react";
-import { ActionFunctionArgs, json } from "@remix-run/node";
-import { Form, useActionData, useNavigation } from "@remix-run/react";
+import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
+import { Form, Link, useActionData, useNavigation } from "@remix-run/react";
 import { useState } from "react";
 import { AnimatedDots } from "~/components/animated-dots";
 import { UploadProfilePictureDialog } from "~/components/profile";
 import { useUserData } from "~/hooks/useUserData";
-import { editProfileData, editProfileDataSchema } from "~/service/user";
+import {
+  editProfileData,
+  editProfileDataSchema,
+  getCookie,
+} from "~/service/user";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const cookie = getCookie(request);
+  if (!cookie) {
+    return redirect("/login");
+  }
   const formData = await request.formData();
   const data = editProfileDataSchema.safeParse(formData);
   if (data.success) {
-    return await editProfileData(request, data.data);
+    return await editProfileData(cookie, data.data);
   } else {
     return json({ error: "Data can't be empty!" });
   }
@@ -117,6 +125,10 @@ export default () => {
             </div>
           )}
         </button>
+
+        <Link to="/profile/change-password" className="!mt-4 text-blue-500 hover:underline text-lg">
+          Change password
+        </Link>
 
         {!!actionData?.error && (
           <div className="mt-2 text-center text-bold text-red-500 text-xl">

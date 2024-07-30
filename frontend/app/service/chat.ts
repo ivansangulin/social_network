@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { getCookie } from "./user";
 import { friendSchema } from "./friendship";
 
 const messageSchema = z.object({
@@ -37,12 +36,8 @@ export type ChatsPaging = z.infer<typeof chatsPagingSchema>;
 export const getMessages = async (
   chatId: string,
   cursor: string | null,
-  request: Request
+  cookie: string
 ) => {
-  const cookie = getCookie(request);
-  if (!cookie) {
-    return null;
-  }
   try {
     const messagesResponse = await fetch(
       `${process.env.BACKEND_URL}/messaging/messages?chatId=${chatId}&cursor=${
@@ -71,12 +66,8 @@ export const getMessages = async (
   }
 };
 
-export const getChats = async (request: Request, cursor: string | null) => {
+export const getChats = async (cookie: string, cursor: string | null) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return null;
-    }
     const chatsResponse = await fetch(
       `${process.env.BACKEND_URL}/messaging/chats?cursor=${cursor ?? ""}`,
       {
@@ -97,12 +88,8 @@ export const getChats = async (request: Request, cursor: string | null) => {
   }
 };
 
-export const getNewChat = async (request: Request, friendId: string) => {
+export const getNewChat = async (cookie: string, friendId: string) => {
   try {
-    const cookie = getCookie(request);
-    if (!cookie) {
-      return null;
-    }
     const chatResponse = await fetch(
       `${process.env.BACKEND_URL}/messaging/new-chat?friendId=${friendId}`,
       {

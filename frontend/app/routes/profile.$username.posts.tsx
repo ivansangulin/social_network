@@ -5,15 +5,19 @@ import { Post } from "~/components/post";
 import { useUserData } from "~/hooks/useUserData";
 import { SetPostsContext } from "~/root";
 import { getUserPosts, PostPaging, Post as PostType } from "~/service/post";
-import { me } from "~/service/user";
+import { getCookie, me } from "~/service/user";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const searchParams = new URL(request.url).searchParams;
   const cursor = searchParams.get("cursor");
   const { username } = params;
+  const cookie = getCookie(request);
+  if (!cookie) {
+    return redirect("/login");
+  }
   const [user, userPostsPaging] = await Promise.all([
-    me(request),
-    getUserPosts(request, username!, cursor),
+    me(request, cookie),
+    getUserPosts(cookie, username!, cursor),
   ]);
   if (!user) {
     return redirect("/login");

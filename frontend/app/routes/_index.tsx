@@ -24,17 +24,21 @@ import {
   PostPaging,
   Post as PostType,
 } from "~/service/post";
-import { me } from "~/service/user";
+import { getCookie, me } from "~/service/user";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import React from "react";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const cookie = getCookie(request);
+  if (!cookie) {
+    return redirect("/login");
+  }
   const [user, friendsPaging, postsPaging] = await Promise.all([
-    me(request),
-    getMyFriends(request, null, null),
-    getMainPagePosts(request, null),
+    me(request, cookie),
+    getMyFriends(cookie, null, null),
+    getMainPagePosts(cookie, null),
   ]);
   if (!user) {
     return redirect("/login");
@@ -55,8 +59,12 @@ const actionSchema = zfd.formData({
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const data = actionSchema.safeParse(formData);
+  const cookie = getCookie(request);
+  if (!cookie) {
+    return redirect("/login");
+  }
   if (data.success) {
-    return await createNewPost(request, formData);
+    return await createNewPost(cookie, formData);
   } else {
     return json({ error: "Post text can't be empty!", post: null });
   }
@@ -193,7 +201,7 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
     if (actionData) {
       setCreating(false);
       if (!actionData.error) {
-        if(textAreaRef.current)
+        if (textAreaRef.current)
           textAreaRef.current.style.height = `${defaultPictureWidth}px`;
         onNewPost(actionData.post!);
         setFiles([]);
@@ -277,7 +285,7 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
   const openFileSelector = (e: FormEvent<HTMLButtonElement>) => {
     e.preventDefault();
     inputFileRef.current?.click();
-  }
+  };
 
   const uploadFiles = (e: FormEvent<HTMLInputElement>) => {
     if (files.length === maxFileCount) return;
@@ -328,7 +336,9 @@ const CreatePost = ({ onNewPost }: { onNewPost: (post: PostType) => void }) => {
         <div className="z-10 absolute bg-stone-100 bg-opacity-85 w-full h-full top-0 left-0 flex flex-col justify-center items-center">
           <CloudUpIcon className="h-10 w-10" />
           <div className="font-semibold">Upload photos (max 8MB)</div>
-          <div className="font-semibold">Supported format: .jpg, .jpeg and .png</div>
+          <div className="font-semibold">
+            Supported format: .jpg, .jpeg and .png
+          </div>
         </div>
       )}
       <div className="border p-4 rounded-2xl space-y-4 bg-white">

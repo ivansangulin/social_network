@@ -52,9 +52,7 @@ export const acceptFriendRequest = async (userId: string, friendId: string) => {
   } else if (friendRequest.to_user_id !== userId) {
     throw new Error("Not my request!");
   }
-  const {
-    user: { username },
-  } = await prisma.$transaction(async (prismaTx) => {
+  await prisma.$transaction(async (prismaTx) => {
     const { from_user_id: friendId } = await prismaTx.friendRequest.update({
       data: {
         accepted: true,

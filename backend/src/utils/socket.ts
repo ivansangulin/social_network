@@ -6,7 +6,6 @@ import {
   readMessages,
 } from "../services/MessagingService";
 import { readNotifications } from "../services/NotificationService";
-import { createPost } from "../services/PostService";
 import { updateStatus } from "../services/UserService";
 
 export const connectSocket = () => {

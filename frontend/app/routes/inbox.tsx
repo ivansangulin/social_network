@@ -175,10 +175,10 @@ export default () => {
       diffFromNow > 7
         ? format(date, "dd-MM-yyyy")
         : diffFromNow === 0
-        ? "Today"
-        : diffFromNow === 1
-        ? "Yesterday"
-        : format(date, "EEEE");
+          ? "Today"
+          : diffFromNow === 1
+            ? "Yesterday"
+            : format(date, "EEEE");
     return formatedDate;
   };
 
@@ -441,34 +441,32 @@ const FriendsFinder = ({
       </div>
       <hr />
       <div className="flex flex-col h-[28rem] overflow-y-auto scrollbar-thin">
-        {friends.length > 0 ? (
-          friends.map((friend) => (
-            <button
-              className="hover:bg-stone-100"
-              key={friend.id}
-              onClick={() => onFriendSelect(friend)}
-            >
-              <div className="flex items-center space-x-3 p-2">
-                {friend.profile_picture_uuid && backendUrl ? (
-                  <img
-                    alt=""
-                    src={`${backendUrl}/image/profile_picture/${friend.profile_picture_uuid}`}
-                    className="object-cover rounded-full aspect-square max-w-[40px]"
-                  />
-                ) : (
-                  <img
-                    alt=""
-                    src="/images/default_profile_picture.png"
-                    className="max-w-[40px]"
-                  />
-                )}
-                <div className="">{friend.username}</div>
-              </div>
-            </button>
-          ))
-        ) : (
-          <>No account found.</>
-        )}
+        {friends.length > 0
+          ? friends.map((friend) => (
+              <button
+                className="hover:bg-stone-100"
+                key={friend.id}
+                onClick={() => onFriendSelect(friend)}
+              >
+                <div className="flex items-center space-x-3 p-2">
+                  {friend.profile_picture_uuid && backendUrl ? (
+                    <img
+                      alt=""
+                      src={`${backendUrl}/image/profile_picture/${friend.profile_picture_uuid}`}
+                      className="object-cover rounded-full aspect-square max-w-[40px]"
+                    />
+                  ) : (
+                    <img
+                      alt=""
+                      src="/images/default_profile_picture.png"
+                      className="max-w-[40px]"
+                    />
+                  )}
+                  <div className="">{friend.username}</div>
+                </div>
+              </button>
+            ))
+          : search.current !== "" && fetching === false && <>No account found.</>}
       </div>
     </>
   );
@@ -851,10 +849,13 @@ const ActiveChat = forwardRef<NewMessageHandle, ChatProps>((props, ref) => {
                     "dd-MM-yyyy"
                   )
                 : diffFromNow === 0
-                ? "Today"
-                : diffFromNow === 1
-                ? "Yesterday"
-                : format(new Date(msg.created).toLocaleDateString(), "EEEE");
+                  ? "Today"
+                  : diffFromNow === 1
+                    ? "Yesterday"
+                    : format(
+                        new Date(msg.created).toLocaleDateString(),
+                        "EEEE"
+                      );
             return (
               <div className="flex flex-col" key={index}>
                 <div

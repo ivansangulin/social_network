@@ -57,7 +57,7 @@ postRouter.get(
       }
       const friends = await areFriends(myId, userData.id);
       if (friends || userData.public_profile || myId === userData.id) {
-        const posts = await getUserPosts(userData.id, cursor);
+        const posts = await getUserPosts(myId, userData.id, cursor);
         return res.status(200).json(posts);
       }
       return res

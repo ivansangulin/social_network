@@ -6,6 +6,7 @@ import { createNotification } from "./NotificationService";
 const POST_PAGING_TAKE = 8;
 
 export const getUserPosts = async (
+  myId: string,
   userId: string,
   cursor: string | undefined
 ) => {
@@ -35,7 +36,7 @@ export const getUserPosts = async (
         },
         likes: {
           where: {
-            user_id: userId,
+            user_id: myId,
           },
           select: {
             id: true,

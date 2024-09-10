@@ -214,10 +214,7 @@ userRouter.post(
           return res.status(500).json({ error: "Failed to save file" });
         }
         await changeProfilePicture(userId, newFileName);
-        return res.json({
-          message: "File uploaded successfully",
-          filePath: newPath,
-        });
+        return res.sendStatus(200);
       });
     } catch (err) {
       console.log(err);

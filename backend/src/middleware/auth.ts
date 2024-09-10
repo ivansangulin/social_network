@@ -7,6 +7,7 @@ import {
   checkIfEmailExists,
   checkIfUsernameExists,
   checkPassword,
+  findMyself,
 } from "../services/UserService";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -101,6 +102,7 @@ export const RequiresAuth = async (
       const token = decoded as JwtPayload;
       const { id } = token;
       req.userId = id;
+      await findMyself(id);
     });
     next();
   } catch (err) {

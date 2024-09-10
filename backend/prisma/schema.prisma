@@ -8,24 +8,24 @@ generator client {
 }
 
 model User {
-  id                   String             @id @default(auto()) @map("_id") @db.ObjectId
-  username             String             @unique
-  email                String             @unique
+  id                   String            @id @default(auto()) @map("_id") @db.ObjectId
+  username             String            @unique
+  email                String            @unique
   password             String
   profile_picture_uuid String?
   public_profile       Boolean
-  friendshipToFriend   Friendship[]       @relation("friendRelation")
-  friendshipToUser     Friendship[]       @relation("userRelation")
+  friendshipToFriend   Friendship[]      @relation("friendRelation")
+  friendshipToUser     Friendship[]      @relation("userRelation")
   posts                Post[]
   user_status          UserStatus?
-  friendRequestFrom    FriendRequest[]    @relation("fromUser")
-  friendRequestTo      FriendRequest[]    @relation("toUser")
-  Like                 PostLike[]
-  Notification         Notification[]
-  Comment              Comment[]
-  CommentLike          CommentLike[]
-  ChatParticipants     ChatParticipants[]
-  Message              Message[]
+  friendRequestFrom    FriendRequest[]   @relation("fromUser")
+  friendRequestTo      FriendRequest[]   @relation("toUser")
+  postLikes            PostLike[]
+  notifications        Notification[]
+  comments             Comment[]
+  commentLikes         CommentLike[]
+  chatParticipants     ChatParticipant[]
+  messages             Message[]
 
   @@map("users")
 }
@@ -41,17 +41,17 @@ model Friendship {
 }
 
 model Post {
-  id          String     @id @default(auto()) @map("_id") @db.ObjectId
-  text        String
-  created     DateTime   @default(now())
-  user_id     String     @db.ObjectId
-  user        User       @relation(fields: [user_id], references: [id])
-  parent_id   String?    @db.ObjectId
-  photos String[]
-  parent      Post?      @relation(name: "shares", fields: [parent_id], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  shares      Post[]     @relation(name: "shares")
-  likes       PostLike[]
-  comments    Comment[]
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  text      String
+  created   DateTime   @default(now())
+  user_id   String     @db.ObjectId
+  user      User       @relation(fields: [user_id], references: [id])
+  parent_id String?    @db.ObjectId
+  photos    String[]
+  parent    Post?      @relation(name: "shares", fields: [parent_id], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  shares    Post[]     @relation(name: "shares")
+  likes     PostLike[]
+  comments  Comment[]
 
   @@map("posts")
 }
@@ -97,12 +97,11 @@ model Message {
 
 model UserStatus {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  user_id     String   @db.ObjectId
+  user_id     String   @unique @db.ObjectId
   user        User     @relation(fields: [user_id], references: [id])
   is_online   Boolean  @default(true)
   last_active DateTime @default(now())
 
-  @@unique([user_id])
   @@map("user_status")
 }
 
@@ -143,14 +142,14 @@ model CommentLike {
 }
 
 model Chat {
-  id           String             @id @default(auto()) @map("_id") @db.ObjectId
-  participants ChatParticipants[]
+  id           String            @id @default(auto()) @map("_id") @db.ObjectId
+  participants ChatParticipant[]
   messages     Message[]
 
   @@map("chats")
 }
 
-model ChatParticipants {
+model ChatParticipant {
   id      String @id @default(auto()) @map("_id") @db.ObjectId
   user_id String @db.ObjectId
   user    User   @relation(fields: [user_id], references: [id])
